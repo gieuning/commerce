@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: commerce-core
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3307/commerce_core}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # Flyway 설정
+  flyway:
+    enabled: true # Flyway 활성화 -> false 로 변경 시 활성화 안됨
+    locations: classpath:db/migration # 마이그레이션 파일 위치 지정
+    baseline-on-migrate: true # 기존에 테이블이 있는 DB에 Flyway를 처음 적용할 때 사용
+
+server:
+  port: 8080
+
+# Swagger UI 설정 (Springdoc)
+springdoc:
+  swagger-ui:
+    enabled: true
