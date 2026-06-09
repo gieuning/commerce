@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +41,14 @@ public class GlobalExceptionHandler {
     String errorMessage = extractErrorMessages(ex);
     log.warn("[BindException] : {}", errorMessage);
     return ApiResponse.fail(HttpStatus.BAD_REQUEST, VALIDATION_ERROR, errorMessage);
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
+      HttpMessageNotReadableException ex) {
+    log.warn("[HttpMessageNotReadableException] : {}", ex.getMessage());
+    return ApiResponse.fail(HttpStatus.BAD_REQUEST, "INVALID_REQUEST_BODY",
+        "요청 본문(JSON) 형식이 올바르지 않습니다.");
   }
 
   @ExceptionHandler(NoResourceFoundException.class)

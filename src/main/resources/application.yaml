@@ -30,3 +30,9 @@ server:
 springdoc:
   swagger-ui:
     enabled: true
+
+# JWT 설정
+jwt:
+  # HS256은 최소 256bit(32바이트↑) 필요. 운영에선 반드시 JWT_SECRET 환경변수로 주입.
+  secret: ${JWT_SECRET:local-dev-secret-please-change-min-32-chars-1234567890}
+  expiration: 3600000   # Access Token 만료 시간 (ms) = 1시간
