@@ -59,4 +59,6 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// 테스트 JVM 전용 JWT secret (운영과 무관) — main yaml은 fail-closed라 테스트엔 주입 필요
+	environment 'JWT_SECRET', 'test-only-secret-min-32-characters-0123456789'
 }

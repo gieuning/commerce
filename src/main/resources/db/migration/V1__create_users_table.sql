@@ -9,5 +9,6 @@ CREATE TABLE users
     created_at   DATETIME(6)  NOT NULL,
     updated_at   DATETIME(6)  NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_users_email (email)
+    UNIQUE KEY uq_users_email (email),
+    CONSTRAINT chk_users_status CHECK (status IN ('ACTIVE', 'INACTIVE', 'DELETED'))
 );

@@ -11,6 +11,7 @@ import com.gieun.commerce.global.exception.DomainExceptionCode;
 import com.gieun.commerce.global.security.CustomUserDetails;
 import com.gieun.commerce.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -42,7 +43,11 @@ public class UserService {
         request.getPhoneNumber()
     );
 
-    return UserResponse.from(userRepository.save(user));
+    try {
+      return UserResponse.from(userRepository.save(user));
+    } catch (DataIntegrityViolationException e) {
+      throw new DomainException(DomainExceptionCode.DUPLICATE_EMAIL);
+    }
   }
 
   public TokenResponse login(LoginRequest request) {

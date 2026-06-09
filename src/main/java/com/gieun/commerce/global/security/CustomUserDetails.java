@@ -1,6 +1,7 @@
 package com.gieun.commerce.global.security;
 
 import com.gieun.commerce.domain.user.entity.User;
+import com.gieun.commerce.global.constants.StatusType;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -18,17 +19,20 @@ public class CustomUserDetails implements UserDetails, Serializable {
   private final String email;
   private final String password;
   private final String role;
+  private final StatusType status;
 
-  public CustomUserDetails(Long userId, String email, String password, String role) {
+  public CustomUserDetails(Long userId, String email, String password, String role,
+      StatusType status) {
     this.userId = userId;
     this.email = email;
     this.password = password;
     this.role = role;
+    this.status = status;
   }
 
   public static CustomUserDetails from(User user) {
     return new CustomUserDetails(user.getId(), user.getEmail(), user.getPassword(),
-        user.getRole().name());
+        user.getRole().name(), user.getStatus());
   }
 
   @Override
@@ -63,6 +67,6 @@ public class CustomUserDetails implements UserDetails, Serializable {
 
   @Override
   public boolean isEnabled() {
-    return true;
+    return status == StatusType.ACTIVE;
   }
 }

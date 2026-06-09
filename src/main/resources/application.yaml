@@ -33,6 +33,6 @@ springdoc:
 
 # JWT 설정
 jwt:
-  # HS256은 최소 256bit(32바이트↑) 필요. 운영에선 반드시 JWT_SECRET 환경변수로 주입.
-  secret: ${JWT_SECRET:local-dev-secret-please-change-min-32-chars-1234567890}
+  # HS256은 최소 256bit(32바이트↑) 필요. JWT_SECRET 환경변수 필수(미설정 시 기동 실패 = fail-closed).
+  secret: ${JWT_SECRET}
   expiration: 3600000   # Access Token 만료 시간 (ms) = 1시간
