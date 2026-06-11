@@ -2,6 +2,7 @@ package com.gieun.commerce.global.exception;
 
 import com.gieun.commerce.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Hidden;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -58,9 +59,10 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
-    log.error("[Exception] : ", ex);
-    String message = ex.getMessage() != null ? ex.getMessage() : "서버 오류가 발생하였습니다.";
-    return ApiResponse.fail(HttpStatus.INTERNAL_SERVER_ERROR, SERVER_ERROR, message);
+    String traceId = UUID.randomUUID().toString().substring(0, 8);
+    log.error("[Exception] traceId={}", traceId, ex);
+    return ApiResponse.fail(HttpStatus.INTERNAL_SERVER_ERROR, SERVER_ERROR,
+        "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요. (오류코드: " + traceId + ")");
   }
 
   private String extractErrorMessages(BindException ex) {
