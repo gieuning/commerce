@@ -70,10 +70,16 @@ public class Product extends BaseEntity {
   }
 
   public void updateStock(int stock) {
+    if (stock < 0) {
+      throw new IllegalArgumentException("재고는 0 이상이어야 합니다.");
+    }
     this.stock = stock;
   }
 
   public void decreaseStock(int quantity) {
+    if (quantity <= 0) {
+      throw new IllegalArgumentException("수량은 양수여야 합니다.");
+    }
     if (this.stock < quantity) {
       throw new DomainException(DomainExceptionCode.OUT_OF_STOCK_PRODUCT);
     }
