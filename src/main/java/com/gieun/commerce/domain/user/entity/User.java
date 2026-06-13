@@ -60,5 +60,18 @@ public class User extends BaseEntity {
         .role(Role.USER)
         .build();
   }
+
+  public void updateProfile(String name, String phoneNumber) {
+    this.name = name;
+    this.phoneNumber = phoneNumber;
+  }
+
+  public void changePassword(String encodedPassword) {
+    this.password = encodedPassword;
+  }
+
+  public void withdraw() {
+    this.status = StatusType.DELETED;
+  }
 }
 
