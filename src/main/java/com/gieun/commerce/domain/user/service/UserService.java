@@ -1,7 +1,10 @@
 package com.gieun.commerce.domain.user.service;
 
+import com.gieun.commerce.domain.user.dto.request.ChangePasswordRequest;
 import com.gieun.commerce.domain.user.dto.request.LoginRequest;
 import com.gieun.commerce.domain.user.dto.request.SignupRequest;
+import com.gieun.commerce.domain.user.dto.request.UpdateProfileRequest;
+import com.gieun.commerce.domain.user.dto.request.WithdrawRequest;
 import com.gieun.commerce.domain.user.dto.response.TokenResponse;
 import com.gieun.commerce.domain.user.dto.response.UserResponse;
 import com.gieun.commerce.domain.user.entity.User;
@@ -65,8 +68,43 @@ public class UserService {
   }
 
   public UserResponse getMyInfo(Long userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_USER));
+    return UserResponse.from(getUserById(userId));
+  }
+
+  @Transactional
+  public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
+    User user = getUserById(userId);
+    user.updateProfile(request.getName(), request.getPhoneNumber());
     return UserResponse.from(user);
+  }
+
+  @Transactional
+  public void changePassword(Long userId, ChangePasswordRequest request) {
+    User user = getUserById(userId);
+
+    if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+      throw new DomainException(DomainExceptionCode.PASSWORD_MISMATCH);
+    }
+    if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+      throw new DomainException(DomainExceptionCode.SAME_AS_OLD_PASSWORD);
+    }
+
+    user.changePassword(passwordEncoder.encode(request.getNewPassword()));
+  }
+
+  @Transactional
+  public void withdraw(Long userId, WithdrawRequest request) {
+    User user = getUserById(userId);
+
+    if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+      throw new DomainException(DomainExceptionCode.PASSWORD_MISMATCH);
+    }
+
+    user.withdraw();
+  }
+
+  private User getUserById(Long userId) {
+    return userRepository.findById(userId)
+        .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_USER));
   }
 }
