@@ -22,6 +22,8 @@ public enum DomainExceptionCode {
   // 공통
   NOT_FOUND_USER(HttpStatus.NOT_FOUND, "요청한 사용자를 찾을 수 없습니다."),
   DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "이미 사용 중인 이메일입니다."),
+  PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
+  SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "새 비밀번호는 기존 비밀번호와 달라야 합니다."),
 
   // 상품
   NOT_FOUND_PRODUCT(HttpStatus.NOT_FOUND, "요청한 상품을 찾을 수 없습니다."),
