@@ -26,6 +26,9 @@ public enum DomainExceptionCode {
   // 상품
   NOT_FOUND_PRODUCT(HttpStatus.NOT_FOUND, "요청한 상품을 찾을 수 없습니다."),
   OUT_OF_STOCK_PRODUCT(HttpStatus.BAD_REQUEST, "상품의 재고가 부족합니다."),
+  OUT_OF_STOCK_OPTION_COMBINATION(HttpStatus.BAD_REQUEST, "옵션 조합의 재고가 부족합니다."),
+  DUPLICATE_OPTION_COMBINATION(HttpStatus.BAD_REQUEST, "중복된 옵션 조합이 있습니다."),
+  PRODUCT_HAS_OPTIONS(HttpStatus.BAD_REQUEST, "옵션 상품은 조합 단위로 재고를 관리합니다."),
   UNAVAILABLE_PRODUCT(HttpStatus.BAD_REQUEST, "현재 판매 중이지 않은 상품입니다."),
 
   // 주문
