@@ -13,10 +13,12 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Entity
+@Getter
 @Table(name = "product_option_values")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
