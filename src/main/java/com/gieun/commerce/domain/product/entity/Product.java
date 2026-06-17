@@ -78,6 +78,11 @@ public class Product extends BaseEntity {
     combination.assignProduct(this);
   }
 
+  public void clearOptions() {
+    optionGroups.clear();
+    optionCombinations.clear();
+  }
+
   public static Product create(String name, String description, BigDecimal price, int stock,
       String imageUrl) {
     return Product.builder()
