@@ -1,8 +1,11 @@
 package com.gieun.commerce.domain.product.controller;
 
+import com.gieun.commerce.domain.product.dto.request.OptionCombinationUpdateRequest;
+import com.gieun.commerce.domain.product.dto.request.OptionReplaceRequest;
 import com.gieun.commerce.domain.product.dto.request.ProductCreateRequest;
 import com.gieun.commerce.domain.product.dto.request.ProductUpdateRequest;
 import com.gieun.commerce.domain.product.dto.request.StockUpdateRequest;
+import com.gieun.commerce.domain.product.dto.response.ProductDetailResponse;
 import com.gieun.commerce.domain.product.dto.response.ProductResponse;
 import com.gieun.commerce.domain.product.service.ProductService;
 import com.gieun.commerce.global.response.ApiResponse;
@@ -46,7 +49,7 @@ public class ProductController {
 
   @Operation(summary = "상품 상세 조회")
   @GetMapping("/{id}")
-  public ApiResponse<ProductResponse> getProduct(@PathVariable Long id) {
+  public ApiResponse<ProductDetailResponse> getProduct(@PathVariable Long id) {
     return ApiResponse.ok(productService.getDetail(id));
   }
 
@@ -55,7 +58,7 @@ public class ProductController {
   @PreAuthorize("hasRole('ADMIN')")
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public ApiResponse<ProductResponse> create(@Valid @RequestBody ProductCreateRequest request) {
+  public ApiResponse<ProductDetailResponse> create(@Valid @RequestBody ProductCreateRequest request) {
     return ApiResponse.ok(productService.create(request));
   }
 
@@ -63,7 +66,7 @@ public class ProductController {
   @SecurityRequirement(name = "JWT")
   @PreAuthorize("hasRole('ADMIN')")
   @PutMapping("/{id}")
-  public ApiResponse<ProductResponse> update(@PathVariable Long id,
+  public ApiResponse<ProductDetailResponse> update(@PathVariable Long id,
       @Valid @RequestBody ProductUpdateRequest request) {
     return ApiResponse.ok(productService.update(id, request));
   }
@@ -72,9 +75,28 @@ public class ProductController {
   @SecurityRequirement(name = "JWT")
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{id}/stock")
-  public ApiResponse<ProductResponse> updateStock(@PathVariable Long id,
+  public ApiResponse<ProductDetailResponse> updateStock(@PathVariable Long id,
       @Valid @RequestBody StockUpdateRequest request) {
     return ApiResponse.ok(productService.updateStock(id, request));
+  }
+
+  @Operation(summary = "상품 옵션 조합 수정 (ADMIN)")
+  @SecurityRequirement(name = "JWT")
+  @PreAuthorize("hasRole('ADMIN')")
+  @PatchMapping("/{id}/combinations/{combinationId}")
+  public ApiResponse<ProductDetailResponse> updateCombination(@PathVariable Long id,
+      @PathVariable Long combinationId,
+      @Valid @RequestBody OptionCombinationUpdateRequest request) {
+    return ApiResponse.ok(productService.updateCombination(id, combinationId, request));
+  }
+
+  @Operation(summary = "상품 옵션 전체 교체 (ADMIN)")
+  @SecurityRequirement(name = "JWT")
+  @PreAuthorize("hasRole('ADMIN')")
+  @PutMapping("/{id}/options")
+  public ApiResponse<ProductDetailResponse> replaceOptions(@PathVariable Long id,
+      @Valid @RequestBody OptionReplaceRequest request) {
+    return ApiResponse.ok(productService.replaceOptions(id, request));
   }
 
   @Operation(summary = "상품 삭제 (ADMIN, soft delete)")
