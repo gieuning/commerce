@@ -8,11 +8,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -25,26 +27,24 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(name = "products")
+@Table(name = "product_option_combinations")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Product extends BaseEntity {
+public class OptionCombination extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
 
-  @Column(nullable = false)
-  String name;
-
-  @Column(columnDefinition = "TEXT")
-  String description;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "product_id", nullable = false)
+  Product product;
 
   @Column(nullable = false, precision = 10, scale = 2)
-  BigDecimal price;
+  BigDecimal additionalPrice;
 
   @Column(nullable = false)
   int stock;
@@ -53,60 +53,47 @@ public class Product extends BaseEntity {
   @Column(nullable = false)
   ProductStatus status;
 
-  String imageUrl;
-
-  @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-  @OrderBy("sortOrder ASC")
+  @OneToMany(mappedBy = "combination", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
-  List<OptionGroup> optionGroups = new ArrayList<>();
+  List<CombinationValue> values = new ArrayList<>();
 
-  @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-  @Builder.Default
-  List<OptionCombination> optionCombinations = new ArrayList<>();
-
-  public boolean hasOptions() {
-    return !optionGroups.isEmpty() || !optionCombinations.isEmpty();
-  }
-
-  public void addOptionGroup(OptionGroup optionGroup) {
-    optionGroups.add(optionGroup);
-    optionGroup.assignProduct(this);
-  }
-
-  public void addOptionCombination(OptionCombination combination) {
-    optionCombinations.add(combination);
-    combination.assignProduct(this);
-  }
-
-  public void clearOptions() {
-    optionGroups.clear();
-    optionCombinations.clear();
-  }
-
-  public static Product create(String name, String description, BigDecimal price, int stock,
-      String imageUrl) {
-    return Product.builder()
-        .name(name)
-        .description(description)
-        .price(price)
-        .stock(stock)
-        .status(ProductStatus.FOR_SALE)
-        .imageUrl(imageUrl)
-        .build();
-  }
-
-  public void update(String name, String description, BigDecimal price, String imageUrl) {
-    this.name = name;
-    this.description = description;
-    this.price = price;
-    this.imageUrl = imageUrl;
-  }
-
-  public void updateStock(int stock) {
+  public static OptionCombination create(BigDecimal additionalPrice, int stock) {
+    BigDecimal price = additionalPrice == null ? BigDecimal.ZERO : additionalPrice;
+    if (price.signum() < 0) {
+      throw new IllegalArgumentException("추가금은 0 이상이어야 합니다.");
+    }
     if (stock < 0) {
       throw new IllegalArgumentException("재고는 0 이상이어야 합니다.");
     }
+    return OptionCombination.builder()
+        .additionalPrice(price)
+        .stock(stock)
+        .status(ProductStatus.FOR_SALE)
+        .build();
+  }
+
+  public void addValue(CombinationValue value) {
+    values.add(value);
+    value.assignCombination(this);
+  }
+
+  public void update(BigDecimal additionalPrice, int stock, ProductStatus status) {
+    if (stock < 0) {
+      throw new IllegalArgumentException("재고는 0 이상이어야 합니다.");
+    }
+    if (additionalPrice == null || additionalPrice.signum() < 0) {
+      throw new IllegalArgumentException("추가금은 0 이상이어야 합니다.");
+    }
+    if (status == null) {
+      throw new IllegalArgumentException("판매 상태는 필수입니다.");
+    }
+    this.additionalPrice = additionalPrice;
     this.stock = stock;
+    this.status = status;
+  }
+
+  void assignProduct(Product product) {
+    this.product = product;
   }
 
   public void decreaseStock(int quantity) {
@@ -114,16 +101,15 @@ public class Product extends BaseEntity {
       throw new IllegalArgumentException("수량은 양수여야 합니다.");
     }
     if (this.stock < quantity) {
-      throw new DomainException(DomainExceptionCode.OUT_OF_STOCK_PRODUCT);
+      throw new DomainException(DomainExceptionCode.OUT_OF_STOCK_OPTION_COMBINATION);
     }
     this.stock -= quantity;
   }
 
   public void increaseStock(int quantity) {
+    if (quantity <= 0) {
+      throw new IllegalArgumentException("수량은 양수여야 합니다.");
+    }
     this.stock += quantity;
-  }
-
-  public void discontinue() {
-    this.status = ProductStatus.STOP_SALE;
   }
 }
