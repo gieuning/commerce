@@ -21,6 +21,7 @@ public class OptionCombinationRequest {
   @NotEmpty
   List<@NotBlank String> optionValues;
 
+  @NotNull
   @PositiveOrZero
   BigDecimal additionalPrice;
 

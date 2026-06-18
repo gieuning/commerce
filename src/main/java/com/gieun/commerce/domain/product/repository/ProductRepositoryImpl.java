@@ -55,7 +55,10 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom{
         .distinct()
         .leftJoin(product.optionGroups, optionGroup).fetchJoin()
         .where(product.id.eq(id))
-        .fetchOne();
+        .fetch()
+        .stream()
+        .findFirst()
+        .orElse(null);
 
     if (foundProduct == null) {
       return Optional.empty();

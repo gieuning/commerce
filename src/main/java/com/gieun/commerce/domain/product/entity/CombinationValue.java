@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,16 +35,23 @@ public class CombinationValue extends BaseEntity {
   OptionCombination combination;
 
   @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "option_group_id", nullable = false)
+  OptionGroup optionGroup;
+
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "option_value_id", nullable = false)
   OptionValue optionValue;
 
-  public static CombinationValue create(OptionValue optionValue) {
+  public static CombinationValue create(OptionGroup optionGroup, OptionValue optionValue) {
+    Objects.requireNonNull(optionGroup, "옵션 그룹은 필수입니다.");
+    Objects.requireNonNull(optionValue, "옵션 값은 필수입니다.");
     return CombinationValue.builder()
+        .optionGroup(optionGroup)
         .optionValue(optionValue)
         .build();
   }
 
   void assignCombination(OptionCombination combination) {
-    this.combination = combination;
+    this.combination = Objects.requireNonNull(combination, "옵션 조합은 필수입니다.");
   }
 }
