@@ -58,8 +58,15 @@ public class OptionCombination extends BaseEntity {
   List<CombinationValue> values = new ArrayList<>();
 
   public static OptionCombination create(BigDecimal additionalPrice, int stock) {
+    BigDecimal price = additionalPrice == null ? BigDecimal.ZERO : additionalPrice;
+    if (price.signum() < 0) {
+      throw new IllegalArgumentException("추가금은 0 이상이어야 합니다.");
+    }
+    if (stock < 0) {
+      throw new IllegalArgumentException("재고는 0 이상이어야 합니다.");
+    }
     return OptionCombination.builder()
-        .additionalPrice(additionalPrice == null ? BigDecimal.ZERO : additionalPrice)
+        .additionalPrice(price)
         .stock(stock)
         .status(ProductStatus.FOR_SALE)
         .build();
@@ -76,6 +83,9 @@ public class OptionCombination extends BaseEntity {
     }
     if (additionalPrice == null || additionalPrice.signum() < 0) {
       throw new IllegalArgumentException("추가금은 0 이상이어야 합니다.");
+    }
+    if (status == null) {
+      throw new IllegalArgumentException("판매 상태는 필수입니다.");
     }
     this.additionalPrice = additionalPrice;
     this.stock = stock;

@@ -65,7 +65,7 @@ public class Product extends BaseEntity {
   List<OptionCombination> optionCombinations = new ArrayList<>();
 
   public boolean hasOptions() {
-    return !optionGroups.isEmpty();
+    return !optionGroups.isEmpty() || !optionCombinations.isEmpty();
   }
 
   public void addOptionGroup(OptionGroup optionGroup) {

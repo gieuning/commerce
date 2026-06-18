@@ -33,6 +33,6 @@ public class ProductCreateRequest {
 
   String imageUrl;
 
-  List<@Valid OptionGroupRequest> optionGroups;
-  List<@Valid OptionCombinationRequest> combinations;
+  List<@Valid @NotNull OptionGroupRequest> optionGroups;
+  List<@Valid @NotNull OptionCombinationRequest> combinations;
 }

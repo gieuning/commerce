@@ -62,12 +62,22 @@ public class ProductService {
         request.getCombinations() != null && !request.getCombinations().isEmpty();
 
     if (hasOptions) {
-      if (!hasCombinations) {
+      if (!hasCombinations || request.getStock() != null) {
         throw new DomainException(DomainExceptionCode.INVALID_OPTION_REQUEST);
       }
       return;
     }
     if (hasCombinations || request.getStock() == null) {
+      throw new DomainException(DomainExceptionCode.INVALID_OPTION_REQUEST);
+    }
+  }
+
+  private void validateReplaceRequest(OptionReplaceRequest request) {
+    boolean hasOptionGroups =
+        request.getOptionGroups() != null && !request.getOptionGroups().isEmpty();
+    boolean hasCombinations =
+        request.getCombinations() != null && !request.getCombinations().isEmpty();
+    if (!hasOptionGroups || !hasCombinations) {
       throw new DomainException(DomainExceptionCode.INVALID_OPTION_REQUEST);
     }
   }
@@ -117,7 +127,7 @@ public class ProductService {
             .findFirst()
             .orElseThrow(() -> new DomainException(DomainExceptionCode.INVALID_OPTION_REQUEST));
 
-        combination.addValue(CombinationValue.create(value));
+        combination.addValue(CombinationValue.create(group, value));
       }
       product.addOptionCombination(combination);
     }
@@ -165,6 +175,7 @@ public class ProductService {
 
   @Transactional
   public ProductDetailResponse replaceOptions(Long id, OptionReplaceRequest request) {
+    validateReplaceRequest(request);
     Product product = findProduct(id);
     product.clearOptions();
     product.updateStock(0);

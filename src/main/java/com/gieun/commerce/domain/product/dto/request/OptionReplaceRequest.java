@@ -2,6 +2,7 @@ package com.gieun.commerce.domain.product.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -17,9 +18,9 @@ public class OptionReplaceRequest {
 
   @Valid
   @NotEmpty
-  List<OptionGroupRequest> optionGroups;
+  List<@NotNull OptionGroupRequest> optionGroups;
 
   @Valid
   @NotEmpty
-  List<OptionCombinationRequest> combinations;
+  List<@NotNull OptionCombinationRequest> combinations;
 }
