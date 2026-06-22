@@ -37,6 +37,8 @@ public enum DomainExceptionCode {
   DUPLICATE_OPTION_COMBINATION(HttpStatus.BAD_REQUEST, "중복된 옵션 조합이 있습니다."),
   PRODUCT_HAS_OPTIONS(HttpStatus.BAD_REQUEST, "옵션 상품은 조합 단위로 재고를 관리합니다."),
 
+  // 장바구니
+  NOT_FOUND_CART_ITEM(HttpStatus.NOT_FOUND, "요청한 장바구니 상품을 찾을 수 없습니다."),
 
   // 주문
   NOT_FOUND_ORDER(HttpStatus.NOT_FOUND, "요청한 주문을 찾을 수 없습니다."),
