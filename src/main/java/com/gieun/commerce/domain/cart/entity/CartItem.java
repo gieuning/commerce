@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,9 @@ public class CartItem extends BaseEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
+
+  @Version
+  Long version;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "cart_id", nullable = false)
@@ -65,6 +69,10 @@ public class CartItem extends BaseEntity {
   void changeQuantity(int quantity) {
     validateQuantity(quantity);
     this.quantity = quantity;
+  }
+
+  void changeOption(Long optionCombinationId) {
+    this.optionCombinationId = optionCombinationId;
   }
 
   boolean matches(Long productId, Long optionCombinationId) {

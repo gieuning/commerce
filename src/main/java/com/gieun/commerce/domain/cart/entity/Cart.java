@@ -62,14 +62,60 @@ public class Cart extends BaseEntity {
         });
   }
 
-  public void changeQuantity(Long productId, Long optionCombinationId, int quantity) {
-    findItem(productId, optionCombinationId)
-        .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_CART_ITEM))
-        .changeQuantity(quantity);
+  public int calculateQuantityAfterAdd(Long productId, Long optionCombinationId, int quantity) {
+    return findItem(productId, optionCombinationId)
+        .map(item -> item.getQuantity() + quantity)
+        .orElse(quantity);
   }
 
-  public void removeItem(Long productId, Long optionCombinationId) {
-    items.removeIf(item -> item.matches(productId, optionCombinationId));
+  public int calculateQuantityAfterOptionChange(CartItem item, Long optionCombinationId) {
+    validateContains(item);
+    if (Objects.equals(item.getOptionCombinationId(), optionCombinationId)) {
+      return item.getQuantity();
+    }
+
+    return findItem(item.getProductId(), optionCombinationId)
+        .map(target -> target.getQuantity() + item.getQuantity())
+        .orElse(item.getQuantity());
+  }
+
+  public CartItem getItem(Long cartItemId) {
+    return items.stream()
+        .filter(item -> Objects.equals(item.getId(), cartItemId))
+        .findFirst()
+        .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_CART_ITEM));
+  }
+
+  public void changeQuantity(Long cartItemId, int quantity) {
+    getItem(cartItemId).changeQuantity(quantity);
+  }
+
+  public void changeQuantity(CartItem item, int quantity) {
+    validateContains(item);
+    item.changeQuantity(quantity);
+  }
+
+  public void changeOption(CartItem item, Long optionCombinationId) {
+    validateContains(item);
+    if (Objects.equals(item.getOptionCombinationId(), optionCombinationId)) {
+      return;
+    }
+
+    findItem(item.getProductId(), optionCombinationId).ifPresentOrElse(
+        target -> {
+          target.increaseQuantity(item.getQuantity());
+          items.remove(item);
+        },
+        () -> item.changeOption(optionCombinationId)
+    );
+  }
+
+  public void removeItem(Long cartItemId) {
+    boolean removed = items.removeIf(item -> Objects.equals(item.getId(), cartItemId));
+
+    if (!removed) {
+      throw new DomainException(DomainExceptionCode.NOT_FOUND_CART_ITEM);
+    }
   }
 
   public void clear() {
@@ -80,5 +126,11 @@ public class Cart extends BaseEntity {
     return items.stream()
         .filter(item -> item.matches(productId, optionCombinationId))
         .findFirst();
+  }
+
+  private void validateContains(CartItem item) {
+    if (!items.contains(item)) {
+      throw new DomainException(DomainExceptionCode.NOT_FOUND_CART_ITEM);
+    }
   }
 }
