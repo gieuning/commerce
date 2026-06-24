@@ -129,7 +129,8 @@ public class Cart extends BaseEntity {
   }
 
   private void validateContains(CartItem item) {
-    if (!items.contains(item)) {
+    if (item == null || item.getId() == null || items.stream()
+        .noneMatch(existing -> Objects.equals(existing.getId(), item.getId()))) {
       throw new DomainException(DomainExceptionCode.NOT_FOUND_CART_ITEM);
     }
   }
