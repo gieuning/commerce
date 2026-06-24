@@ -38,6 +38,7 @@ public enum DomainExceptionCode {
   PRODUCT_HAS_OPTIONS(HttpStatus.BAD_REQUEST, "옵션 상품은 조합 단위로 재고를 관리합니다."),
 
   // 장바구니
+  NOT_FOUND_CART(HttpStatus.NOT_FOUND, "요청한 장바구니를 찾을 수 없습니다."),
   NOT_FOUND_CART_ITEM(HttpStatus.NOT_FOUND, "요청한 장바구니 상품을 찾을 수 없습니다."),
 
   // 주문
