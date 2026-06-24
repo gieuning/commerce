@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -55,6 +56,14 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(NoResourceFoundException.class)
   public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(NoResourceFoundException ex) {
     return ApiResponse.fail(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage());
+  }
+
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  public ResponseEntity<ApiResponse<Void>> handleOptimisticLockingFailureException(
+      OptimisticLockingFailureException ex) {
+    log.warn("[OptimisticLockingFailureException] : {}", ex.getMessage());
+    return ApiResponse.fail(HttpStatus.CONFLICT, "OPTIMISTIC_LOCK_CONFLICT",
+        "다른 요청에서 먼저 변경되었습니다. 다시 조회 후 시도해 주세요.");
   }
 
   @ExceptionHandler(Exception.class)
