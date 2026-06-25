@@ -45,6 +45,7 @@ public enum DomainExceptionCode {
   NOT_FOUND_ORDER(HttpStatus.NOT_FOUND, "요청한 주문을 찾을 수 없습니다."),
   UNAUTHORIZED_ORDER(HttpStatus.FORBIDDEN, "해당 주문에 접근 권한이 없습니다."),
   INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "현재 주문 상태에서는 해당 작업을 수행할 수 없습니다."),
+  CANNOT_CANCEL_ORDER(HttpStatus.BAD_REQUEST, "취소할 수 없는 주문 상태입니다."),
   EMPTY_ORDER_ITEMS(HttpStatus.BAD_REQUEST, "주문 상품이 비어있습니다."),
   NOT_CANCELLED_ORDER(HttpStatus.BAD_REQUEST, "취소된 주문이 아닙니다."),
 
