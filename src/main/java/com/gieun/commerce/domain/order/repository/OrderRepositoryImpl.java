@@ -13,6 +13,7 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,7 +29,7 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
 
   @Override
   public Page<Order> search(Long userId, OrderSearchCondition condition, Pageable pageable) {
-    OrderSpecifier<?> orderSpecifier = orderSpecifier(pageable);
+    OrderSpecifier<?>[] orderSpecifiers = orderSpecifiers(pageable);
 
     List<Long> orderIds = queryFactory
         .select(order.id)
@@ -42,7 +43,7 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
         )
         .offset(pageable.getOffset())
         .limit(pageable.getPageSize())
-        .orderBy(orderSpecifier, order.id.desc())
+        .orderBy(orderSpecifiers)
         .fetch();
 
     JPAQuery<Long> countQuery = queryFactory
@@ -65,19 +66,28 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
         .distinct()
         .leftJoin(order.items, orderItem).fetchJoin()
         .where(order.id.in(orderIds))
-        .orderBy(orderSpecifier, order.id.desc())
+        .orderBy(orderSpecifiers)
         .fetch();
 
     return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
   }
 
-  private OrderSpecifier<?> orderSpecifier(Pageable pageable) {
+  private OrderSpecifier<?>[] orderSpecifiers(Pageable pageable) {
+    List<OrderSpecifier<?>> orderSpecifiers = new ArrayList<>();
+
     if (pageable.getSort().isUnsorted()) {
-      return order.orderedAt.desc();
+      orderSpecifiers.add(order.orderedAt.desc());
+    } else {
+      for (Sort.Order sortOrder : pageable.getSort()) {
+        orderSpecifiers.add(orderSpecifier(sortOrder));
+      }
     }
 
-    Sort.Order sortOrder = pageable.getSort().iterator().next();
+    orderSpecifiers.add(order.id.desc());
+    return orderSpecifiers.toArray(new OrderSpecifier<?>[0]);
+  }
 
+  private OrderSpecifier<?> orderSpecifier(Sort.Order sortOrder) {
     if ("orderedAt".equals(sortOrder.getProperty())) {
       return sortOrder.isAscending() ? order.orderedAt.asc() : order.orderedAt.desc();
     }

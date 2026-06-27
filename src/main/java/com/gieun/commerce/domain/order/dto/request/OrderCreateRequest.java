@@ -2,6 +2,7 @@ package com.gieun.commerce.domain.order.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,5 +19,5 @@ import lombok.experimental.FieldDefaults;
 public class OrderCreateRequest {
 
   @NotEmpty
-  List<@Valid OrderItemRequest> items;
+  List<@NotNull @Valid OrderItemRequest> items;
 }
