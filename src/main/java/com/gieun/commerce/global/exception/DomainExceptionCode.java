@@ -48,6 +48,8 @@ public enum DomainExceptionCode {
   CANNOT_CANCEL_ORDER(HttpStatus.BAD_REQUEST, "취소할 수 없는 주문 상태입니다."),
   EMPTY_ORDER_ITEMS(HttpStatus.BAD_REQUEST, "주문 상품이 비어있습니다."),
   NOT_CANCELLED_ORDER(HttpStatus.BAD_REQUEST, "취소된 주문이 아닙니다."),
+  INVALID_ORDER_SEARCH_CONDITION(HttpStatus.BAD_REQUEST, "주문 검색 조건이 올바르지 않습니다."),
+  INVALID_SORT_PROPERTY(HttpStatus.BAD_REQUEST, "지원하지 않는 정렬 필드입니다."),
 
   ;
 
