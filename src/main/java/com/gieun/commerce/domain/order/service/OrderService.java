@@ -16,6 +16,8 @@ import com.gieun.commerce.domain.product.repository.ProductRepository;
 import com.gieun.commerce.global.exception.DomainException;
 import com.gieun.commerce.global.exception.DomainExceptionCode;
 import com.gieun.commerce.global.response.PageResult;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +37,7 @@ public class OrderService {
   public OrderResponse create(Long userId, OrderCreateRequest request) {
     Order order = Order.create(userId);
 
-    for (OrderItemRequest itemRequest : request.getItems()) {
+    for (OrderItemRequest itemRequest : sortRequestItemsByStockLockOrder(request.getItems())) {
       Product product = productRepository.findByIdForUpdate(itemRequest.getProductId())
           .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PRODUCT));
 
@@ -54,7 +56,7 @@ public class OrderService {
 
     order.cancel();
 
-    for (OrderItem item : order.getItems()) {
+    for (OrderItem item : sortOrderItemsByStockLockOrder(order.getItems())) {
       if (item.getOptionCombinationId() == null) {
         Product product = productRepository.findByIdForUpdate(item.getProductId())
             .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PRODUCT));
@@ -70,6 +72,30 @@ public class OrderService {
     }
 
     return OrderResponse.of(order);
+  }
+
+  private List<OrderItemRequest> sortRequestItemsByStockLockOrder(List<OrderItemRequest> items) {
+    return items.stream()
+        .sorted(Comparator
+            .comparing(OrderItemRequest::getProductId)
+            .thenComparing(
+                OrderItemRequest::getOptionCombinationId,
+                Comparator.nullsFirst(Comparator.naturalOrder())
+            )
+        )
+        .toList();
+  }
+
+  private List<OrderItem> sortOrderItemsByStockLockOrder(List<OrderItem> items) {
+    return items.stream()
+        .sorted(Comparator
+            .comparing(OrderItem::getProductId)
+            .thenComparing(
+                OrderItem::getOptionCombinationId,
+                Comparator.nullsFirst(Comparator.naturalOrder())
+            )
+        )
+        .toList();
   }
 
   public OrderResponse getOrder(Long userId, Long orderId) {
