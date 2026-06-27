@@ -14,6 +14,7 @@ import com.gieun.commerce.domain.product.entity.OptionCombination;
 import com.gieun.commerce.domain.product.entity.OptionGroup;
 import com.gieun.commerce.domain.product.entity.OptionValue;
 import com.gieun.commerce.domain.product.entity.Product;
+import com.gieun.commerce.domain.product.repository.OptionCombinationRepository;
 import com.gieun.commerce.domain.product.repository.OptionGroupRepository;
 import com.gieun.commerce.domain.product.repository.ProductRepository;
 import com.gieun.commerce.global.exception.DomainException;
@@ -34,6 +35,7 @@ public class ProductService {
 
   private final ProductRepository productRepository;
   private final OptionGroupRepository optionGroupRepository;
+  private final OptionCombinationRepository optionCombinationRepository;
 
   @Transactional
   public ProductDetailResponse create(ProductCreateRequest request) {
@@ -145,7 +147,7 @@ public class ProductService {
 
   @Transactional
   public ProductDetailResponse update(Long id, ProductUpdateRequest request) {
-    Product product = findProduct(id);
+    Product product = findProductForUpdate(id);
     product.update(request.getName(), request.getDescription(), request.getPrice(),
         request.getImageUrl());
     return ProductDetailResponse.from(product);
@@ -153,7 +155,7 @@ public class ProductService {
 
   @Transactional
   public ProductDetailResponse updateStock(Long id, StockUpdateRequest request) {
-    Product product = findProduct(id);
+    Product product = findProductForUpdate(id);
     if (optionGroupRepository.existsByProductId(id)) {
       throw new DomainException(DomainExceptionCode.PRODUCT_HAS_OPTIONS);
     }
@@ -164,10 +166,9 @@ public class ProductService {
   @Transactional
   public ProductDetailResponse updateCombination(Long id, Long combinationId,
       OptionCombinationUpdateRequest request) {
-    Product product = findProduct(id);
-    OptionCombination combination = product.getOptionCombinations().stream()
-        .filter(c -> c.getId().equals(combinationId))
-        .findFirst()
+    Product product = findProductForUpdate(id);
+    OptionCombination combination = optionCombinationRepository
+        .findByIdAndProductIdForUpdate(combinationId, id)
         .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_OPTION_COMBINATION));
     combination.update(request.getAdditionalPrice(), request.getStock(), request.getStatus());
     return ProductDetailResponse.from(product);
@@ -176,7 +177,7 @@ public class ProductService {
   @Transactional
   public ProductDetailResponse replaceOptions(Long id, OptionReplaceRequest request) {
     validateReplaceRequest(request);
-    Product product = findProduct(id);
+    Product product = findProductForUpdate(id);
     product.clearOptions();
     product.updateStock(0);
     List<OptionGroup> groups = buildOptionGroups(product, request.getOptionGroups());
@@ -187,11 +188,11 @@ public class ProductService {
 
   @Transactional
   public void delete(Long id) {
-    findProduct(id).discontinue();
+    findProductForUpdate(id).discontinue();
   }
 
-  private Product findProduct(Long id) {
-    return productRepository.findById(id)
+  private Product findProductForUpdate(Long id) {
+    return productRepository.findByIdForUpdate(id)
         .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PRODUCT));
   }
 
