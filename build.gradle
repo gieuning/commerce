@@ -13,6 +13,16 @@ java {
 	}
 }
 
+def querydslGeneratedDir = layout.buildDirectory.dir('generated/querydsl')
+
+sourceSets {
+	main {
+		java {
+			srcDir querydslGeneratedDir
+		}
+	}
+}
+
 repositories {
 	mavenCentral()
 }
@@ -61,4 +71,33 @@ tasks.named('test') {
 	useJUnitPlatform()
 	// 테스트 JVM 전용 JWT secret (운영과 무관) — main yaml은 fail-closed라 테스트엔 주입 필요
 	environment 'JWT_SECRET', 'test-only-secret-min-32-characters-0123456789'
+}
+
+tasks.register('generateQuerydsl', JavaCompile) {
+	source = fileTree('src/main/java') {
+		include 'com/gieun/commerce/domain/**/entity/**/*.java'
+		include 'com/gieun/commerce/global/common/BaseEntity.java'
+		include 'com/gieun/commerce/global/constants/**/*.java'
+		include 'com/gieun/commerce/global/exception/DomainException*.java'
+	}
+	classpath = sourceSets.main.compileClasspath
+	destinationDirectory = layout.buildDirectory.dir('tmp/querydsl-classes')
+	options.annotationProcessorPath = configurations.annotationProcessor
+	options.generatedSourceOutputDirectory = querydslGeneratedDir
+	options.compilerArgs += [
+			'-proc:only',
+			'-processor',
+			'lombok.launch.AnnotationProcessorHider$AnnotationProcessor,com.querydsl.apt.jpa.JPAAnnotationProcessor'
+	]
+	doFirst {
+		delete(querydslGeneratedDir)
+	}
+}
+
+tasks.named('compileJava') {
+	dependsOn tasks.named('generateQuerydsl')
+	options.compilerArgs += [
+			'-processor',
+			'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'
+	]
 }
