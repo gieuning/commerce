@@ -95,6 +95,20 @@ public class Order extends BaseEntity {
     status = OrderStatus.CANCELLED;
   }
 
+  public void pay() {
+    if (status != OrderStatus.CREATED) {
+      throw new DomainException(DomainExceptionCode.INVALID_ORDER_STATUS);
+    }
+    status = OrderStatus.PAID;
+  }
+
+  public void cancelPaid() {
+    if (status != OrderStatus.PAID) {
+      throw new DomainException(DomainExceptionCode.CANNOT_CANCEL_ORDER);
+    }
+    status = OrderStatus.CANCELLED;
+  }
+
   private void recalculateTotalPrice() {
     this.totalProductPrice = items.stream()
         .map(OrderItem::getSubtotal)
