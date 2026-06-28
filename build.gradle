@@ -75,8 +75,10 @@ tasks.named('test') {
 
 tasks.register('generateQuerydsl', JavaCompile) {
 	source = fileTree('src/main/java') {
+		include 'com/gieun/commerce/domain/**/entity/*.java'
 		include 'com/gieun/commerce/domain/**/entity/**/*.java'
-		include 'com/gieun/commerce/global/common/BaseEntity.java'
+		include 'com/gieun/commerce/global/common/*.java'
+		include 'com/gieun/commerce/global/constants/*.java'
 		include 'com/gieun/commerce/global/constants/**/*.java'
 		include 'com/gieun/commerce/global/exception/DomainException*.java'
 	}
@@ -84,6 +86,7 @@ tasks.register('generateQuerydsl', JavaCompile) {
 	destinationDirectory = layout.buildDirectory.dir('tmp/querydsl-classes')
 	options.annotationProcessorPath = configurations.annotationProcessor
 	options.generatedSourceOutputDirectory = querydslGeneratedDir
+	options.incremental = false
 	options.compilerArgs += [
 			'-proc:only',
 			'-processor',

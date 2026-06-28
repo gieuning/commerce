@@ -51,6 +51,20 @@ public enum DomainExceptionCode {
   INVALID_ORDER_SEARCH_CONDITION(HttpStatus.BAD_REQUEST, "주문 검색 조건이 올바르지 않습니다."),
   INVALID_SORT_PROPERTY(HttpStatus.BAD_REQUEST, "지원하지 않는 정렬 필드입니다."),
 
+  // 결제
+  NOT_FOUND_PAYMENT(HttpStatus.NOT_FOUND, "요청한 결제를 찾을 수 없습니다."),
+  NOT_FOUND_PAYMENT_RECEIPT(HttpStatus.NOT_FOUND, "요청한 결제 영수증을 찾을 수 없습니다."),
+  CANNOT_REQUEST_PAYMENT(HttpStatus.BAD_REQUEST, "결제 요청을 할 수 없는 주문 상태입니다."),
+  CANNOT_CONFIRM_PAYMENT(HttpStatus.BAD_REQUEST, "승인할 수 없는 결제 상태입니다."),
+  CANNOT_CANCEL_PAYMENT(HttpStatus.BAD_REQUEST, "취소할 수 없는 결제 상태입니다."),
+  ALREADY_REQUESTED_PAYMENT(HttpStatus.CONFLICT, "이미 결제 요청이 존재합니다."),
+  INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "결제 금액이 올바르지 않습니다."),
+  PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 주문 금액과 일치하지 않습니다."),
+  INVALID_PAYMENT_KEY(HttpStatus.BAD_REQUEST, "결제 키가 올바르지 않습니다."),
+  DUPLICATE_PAYMENT_EVENT(HttpStatus.CONFLICT, "이미 처리된 결제 이벤트입니다."),
+  PAYMENT_APPROVAL_FAILED(HttpStatus.BAD_GATEWAY, "PG 결제 승인에 실패했습니다."),
+  PAYMENT_CANCEL_FAILED(HttpStatus.BAD_GATEWAY, "PG 결제 취소에 실패했습니다."),
+
   ;
 
   final HttpStatus status;
