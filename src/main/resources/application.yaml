@@ -36,3 +36,10 @@ jwt:
   # HS256은 최소 256bit(32바이트↑) 필요. JWT_SECRET 환경변수 필수(미설정 시 기동 실패 = fail-closed).
   secret: ${JWT_SECRET}
   expiration: 3600000   # Access Token 만료 시간 (ms) = 1시간
+
+payment:
+  toss:
+    base-url: ${TOSS_BASE_URL:https://api.tosspayments.com}
+    secret-key: ${TOSS_SECRET_KEY:}
+    connect-timeout: ${TOSS_CONNECT_TIMEOUT:3s}
+    read-timeout: ${TOSS_READ_TIMEOUT:10s}
