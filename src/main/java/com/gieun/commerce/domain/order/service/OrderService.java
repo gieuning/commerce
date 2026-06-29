@@ -32,6 +32,7 @@ public class OrderService {
   private final OrderRepository orderRepository;
   private final ProductRepository productRepository;
   private final OptionCombinationRepository combinationRepository;
+  private final OrderStockService orderStockService;
 
   @Transactional
   public OrderResponse create(Long userId, OrderCreateRequest request) {
@@ -55,21 +56,7 @@ public class OrderService {
         .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_ORDER));
 
     order.cancel();
-
-    for (OrderItem item : sortOrderItemsByStockLockOrder(order.getItems())) {
-      if (item.getOptionCombinationId() == null) {
-        Product product = productRepository.findByIdForUpdate(item.getProductId())
-            .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PRODUCT));
-
-        product.increaseStock(item.getQuantity());
-        continue;
-      }
-
-      OptionCombination combination = combinationRepository.findByIdForUpdate(item.getOptionCombinationId())
-          .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_OPTION_COMBINATION));
-
-      combination.increaseStock(item.getQuantity());
-    }
+    orderStockService.restore(order);
 
     return OrderResponse.of(order);
   }
@@ -80,18 +67,6 @@ public class OrderService {
             .comparing(OrderItemRequest::getProductId)
             .thenComparing(
                 OrderItemRequest::getOptionCombinationId,
-                Comparator.nullsFirst(Comparator.naturalOrder())
-            )
-        )
-        .toList();
-  }
-
-  private List<OrderItem> sortOrderItemsByStockLockOrder(List<OrderItem> items) {
-    return items.stream()
-        .sorted(Comparator
-            .comparing(OrderItem::getProductId)
-            .thenComparing(
-                OrderItem::getOptionCombinationId,
                 Comparator.nullsFirst(Comparator.naturalOrder())
             )
         )
