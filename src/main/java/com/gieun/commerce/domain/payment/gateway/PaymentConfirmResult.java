@@ -1,7 +1,7 @@
 package com.gieun.commerce.domain.payment.gateway;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +19,7 @@ public class PaymentConfirmResult {
   BigDecimal suppliedAmount;
   BigDecimal vat;
   String receiptUrl;
-  LocalDateTime approvedAt;
+  OffsetDateTime approvedAt;
   String requestPayload;
   String responsePayload;
 }

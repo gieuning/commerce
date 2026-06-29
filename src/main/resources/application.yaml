@@ -40,6 +40,6 @@ jwt:
 payment:
   toss:
     base-url: ${TOSS_BASE_URL:https://api.tosspayments.com}
-    secret-key: ${TOSS_SECRET_KEY:}
+    secret-key: ${TOSS_SECRET_KEY}
     connect-timeout: ${TOSS_CONNECT_TIMEOUT:3s}
     read-timeout: ${TOSS_READ_TIMEOUT:10s}

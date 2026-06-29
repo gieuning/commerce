@@ -6,6 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.gieun.commerce.domain.order.entity.Order;
 import com.gieun.commerce.domain.order.entity.OrderStatus;
 import com.gieun.commerce.domain.order.repository.OrderRepository;
@@ -22,6 +25,7 @@ import com.gieun.commerce.domain.payment.entity.PaymentMethod;
 import com.gieun.commerce.domain.payment.entity.PaymentReceipt;
 import com.gieun.commerce.domain.payment.entity.PaymentStatus;
 import com.gieun.commerce.domain.payment.entity.PgProvider;
+import com.gieun.commerce.domain.payment.gateway.PaymentCancelCommand;
 import com.gieun.commerce.domain.payment.gateway.PaymentConfirmResult;
 import com.gieun.commerce.domain.payment.gateway.PaymentGateway;
 import com.gieun.commerce.domain.payment.gateway.PaymentGatewayException;
@@ -33,8 +37,10 @@ import com.gieun.commerce.global.exception.DomainException;
 import com.gieun.commerce.global.exception.DomainExceptionCode;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -76,12 +82,19 @@ class PaymentServiceTest {
   @InjectMocks
   PaymentService paymentService;
 
+  AtomicBoolean transactionActive = new AtomicBoolean(false);
+
   @SuppressWarnings("unchecked")
   @org.junit.jupiter.api.BeforeEach
   void setUpTransactionTemplate() {
     org.mockito.Mockito.lenient().when(transactionTemplate.execute(any(TransactionCallback.class))).thenAnswer(invocation -> {
       TransactionCallback<?> callback = invocation.getArgument(0);
-      return callback.doInTransaction(org.mockito.Mockito.mock(TransactionStatus.class));
+      transactionActive.set(true);
+      try {
+        return callback.doInTransaction(org.mockito.Mockito.mock(TransactionStatus.class));
+      } finally {
+        transactionActive.set(false);
+      }
     });
   }
 
@@ -131,7 +144,7 @@ class PaymentServiceTest {
   }
 
   @Test
-  void getPaymentDetailReturnsPaymentEventsReceiptAndCancellations() {
+  void getPaymentDetailDoesNotExposeRawPaymentEventPayloads() throws Exception {
     Long userId = 1L;
     Long paymentId = 100L;
     BigDecimal amount = new BigDecimal("30000.00");
@@ -188,10 +201,17 @@ class PaymentServiceTest {
 
     assertThat(response.getPayment().getPaymentId()).isEqualTo(paymentId);
     assertThat(response.getEvents()).hasSize(1);
-    assertThat(response.getEvents().get(0).getRequestPayload())
-        .isEqualTo("{\"paymentKey\":\"pay_test_key\"}");
-    assertThat(response.getEvents().get(0).getResponsePayload())
-        .isEqualTo("{\"status\":\"DONE\"}");
+    JsonNode eventJson = new ObjectMapper()
+        .registerModule(new JavaTimeModule())
+        .valueToTree(response)
+        .path("events")
+        .get(0);
+    assertThat(eventJson.has("pgEventId")).isFalse();
+    assertThat(eventJson.has("requestPayload")).isFalse();
+    assertThat(eventJson.has("responsePayload")).isFalse();
+    assertThat(eventJson.has("failureCode")).isFalse();
+    assertThat(eventJson.has("failureMessage")).isFalse();
+    assertThat(eventJson.toString()).doesNotContain("pay_test_key");
     assertThat(response.getReceipt()).isNotNull();
     assertThat(response.getReceipt().getReceiptUrl()).isEqualTo("https://receipt.example.com");
     assertThat(response.getCancellations()).hasSize(1);
@@ -201,6 +221,7 @@ class PaymentServiceTest {
   @Test
   void confirmRejectsMismatchedMerchantOrderIdFromGateway() {
     ConfirmFixture fixture = setUpConfirmFixture();
+    BigDecimal chargedAmount = fixture.amount();
     when(paymentGateway.confirm(any())).thenReturn(confirmResult(fixture)
         .merchantOrderId("DIFFERENT_ORDER_ID")
         .requestPayload("{\"orderId\":\"" + fixture.request().getMerchantOrderId() + "\"}")
@@ -216,13 +237,15 @@ class PaymentServiceTest {
         "{\"orderId\":\"" + fixture.request().getMerchantOrderId() + "\"}",
         "{\"orderId\":\"DIFFERENT_ORDER_ID\"}"
     );
+    assertCompensatingCancelRequested(fixture.request().getPaymentKey(), chargedAmount);
   }
 
   @Test
   void confirmRejectsMismatchedPaymentKeyFromGateway() {
     ConfirmFixture fixture = setUpConfirmFixture();
+    String chargedPaymentKey = "DIFFERENT_PAYMENT_KEY";
     when(paymentGateway.confirm(any())).thenReturn(confirmResult(fixture)
-        .paymentKey("DIFFERENT_PAYMENT_KEY")
+        .paymentKey(chargedPaymentKey)
         .requestPayload("{\"paymentKey\":\"" + fixture.request().getPaymentKey() + "\"}")
         .responsePayload("{\"paymentKey\":\"DIFFERENT_PAYMENT_KEY\"}")
         .build());
@@ -236,13 +259,15 @@ class PaymentServiceTest {
         "{\"paymentKey\":\"" + fixture.request().getPaymentKey() + "\"}",
         "{\"paymentKey\":\"DIFFERENT_PAYMENT_KEY\"}"
     );
+    assertCompensatingCancelRequested(chargedPaymentKey, fixture.amount());
   }
 
   @Test
   void confirmRejectsMismatchedTotalAmountFromGateway() {
     ConfirmFixture fixture = setUpConfirmFixture();
+    BigDecimal chargedAmount = new BigDecimal("31000.00");
     when(paymentGateway.confirm(any())).thenReturn(confirmResult(fixture)
-        .totalAmount(new BigDecimal("31000.00"))
+        .totalAmount(chargedAmount)
         .requestPayload("{\"amount\":30000.00}")
         .responsePayload("{\"totalAmount\":31000.00}")
         .build());
@@ -256,6 +281,7 @@ class PaymentServiceTest {
         "{\"amount\":30000.00}",
         "{\"totalAmount\":31000.00}"
     );
+    assertCompensatingCancelRequested(fixture.request().getPaymentKey(), chargedAmount);
   }
 
   @Test
@@ -276,6 +302,20 @@ class PaymentServiceTest {
         "{\"status\":\"request\"}",
         "{\"status\":\"WAITING_FOR_DEPOSIT\"}"
     );
+  }
+
+  @Test
+  void confirmCallsGatewayOutsideLocalTransaction() {
+    ConfirmFixture fixture = setUpConfirmFixture();
+    when(paymentGateway.confirm(any())).thenAnswer(invocation -> {
+      assertThat(transactionActive).isFalse();
+      return confirmResult(fixture).build();
+    });
+
+    paymentService.confirm(fixture.userId(), fixture.request());
+
+    assertThat(fixture.payment().getStatus()).isEqualTo(PaymentStatus.APPROVED);
+    verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any(TransactionCallback.class));
   }
 
   @Test
@@ -305,7 +345,7 @@ class PaymentServiceTest {
     assertThat(event.getResponsePayload()).isEqualTo("{\"code\":\"PG_ERROR\"}");
     assertThat(event.getFailureCode()).isEqualTo("PG_ERROR");
     assertThat(event.getFailureMessage()).isEqualTo("승인 실패");
-    verify(transactionTemplate).execute(any(TransactionCallback.class));
+    verify(transactionTemplate, org.mockito.Mockito.atLeastOnce()).execute(any(TransactionCallback.class));
   }
 
   @Test
@@ -367,7 +407,61 @@ class PaymentServiceTest {
     assertThat(event.getResponsePayload()).isEqualTo("{\"code\":\"PG_CANCEL_ERROR\"}");
     assertThat(event.getFailureCode()).isEqualTo("PG_CANCEL_ERROR");
     assertThat(event.getFailureMessage()).isEqualTo("취소 실패");
-    verify(transactionTemplate).execute(any(TransactionCallback.class));
+    verify(transactionTemplate, org.mockito.Mockito.atLeastOnce()).execute(any(TransactionCallback.class));
+  }
+
+  @Test
+  void cancelCallsGatewayOutsideLocalTransaction() {
+    Long userId = 1L;
+    Long orderId = 10L;
+    Long paymentId = 100L;
+    BigDecimal amount = new BigDecimal("30000.00");
+    Order order = Order.builder()
+        .id(orderId)
+        .userId(userId)
+        .status(OrderStatus.PAID)
+        .totalProductPrice(amount)
+        .discountAmount(BigDecimal.ZERO)
+        .shippingFee(BigDecimal.ZERO)
+        .totalPrice(amount)
+        .orderedAt(LocalDateTime.now())
+        .build();
+    Payment payment = Payment.request(
+        orderId,
+        userId,
+        "20260628000010ABCDEF123456",
+        PgProvider.TOSS,
+        PaymentMethod.CARD,
+        amount
+    );
+    ReflectionTestUtils.setField(payment, "id", paymentId);
+    payment.approve("pay_test_key", LocalDateTime.now());
+    PaymentCancelRequest request = PaymentCancelRequest.builder()
+        .cancelAmount(amount)
+        .cancelReason("단순 변심")
+        .build();
+
+    when(paymentRepository.findByIdAndUserId(paymentId, userId))
+        .thenReturn(Optional.of(payment));
+    when(orderRepository.findByIdAndUserIdForUpdate(orderId, userId))
+        .thenReturn(Optional.of(order));
+    when(paymentRepository.findByIdAndUserIdForUpdate(paymentId, userId))
+        .thenReturn(Optional.of(payment));
+    when(paymentGateway.cancel(any())).thenAnswer(invocation -> {
+      assertThat(transactionActive).isFalse();
+      return com.gieun.commerce.domain.payment.gateway.PaymentCancelResult.builder()
+          .paymentKey("pay_test_key")
+          .pgStatus("CANCELED")
+          .pgCancellationKey("cancel_key")
+          .cancelAmount(amount)
+          .cancelledAt(OffsetDateTime.now())
+          .build();
+    });
+
+    paymentService.cancel(userId, paymentId, request);
+
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CANCELLED);
+    verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any(TransactionCallback.class));
   }
 
   private ConfirmFixture setUpConfirmFixture() {
@@ -418,7 +512,7 @@ class PaymentServiceTest {
         .paymentKey(fixture.request().getPaymentKey())
         .pgStatus("DONE")
         .totalAmount(fixture.amount())
-        .approvedAt(LocalDateTime.now());
+        .approvedAt(OffsetDateTime.now());
   }
 
   private void assertFailedConfirmEventSaved(
@@ -441,7 +535,16 @@ class PaymentServiceTest {
     assertThat(event.getResponsePayload()).isEqualTo(responsePayload);
     assertThat(event.getFailureCode()).isEqualTo(exceptionCode.name());
     assertThat(event.getFailureMessage()).isEqualTo(exceptionCode.getMessage());
-    verify(transactionTemplate).execute(any(TransactionCallback.class));
+    verify(transactionTemplate, org.mockito.Mockito.atLeastOnce()).execute(any(TransactionCallback.class));
+  }
+
+  private void assertCompensatingCancelRequested(String paymentKey, BigDecimal amount) {
+    ArgumentCaptor<PaymentCancelCommand> commandCaptor = ArgumentCaptor.forClass(PaymentCancelCommand.class);
+    verify(paymentGateway).cancel(commandCaptor.capture());
+    PaymentCancelCommand command = commandCaptor.getValue();
+    assertThat(command.getPaymentKey()).isEqualTo(paymentKey);
+    assertThat(command.getCancelAmount()).isEqualByComparingTo(amount);
+    assertThat(command.getCancelReason()).isEqualTo("로컬 결제 승인 검증 실패");
   }
 
   private record ConfirmFixture(

@@ -118,9 +118,8 @@ public class Payment extends BaseEntity {
   }
 
   private static void validateAmount(BigDecimal amount) {
-    Objects.requireNonNull(amount, "결제 금액은 필수입니다.");
-    if (amount.signum() <= 0) {
-      throw new IllegalArgumentException("결제 금액은 0보다 커야 합니다.");
+    if (amount == null || amount.signum() <= 0) {
+      throw new DomainException(DomainExceptionCode.INVALID_PAYMENT_AMOUNT);
     }
   }
 }

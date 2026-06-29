@@ -20,11 +20,6 @@ public class PaymentEventResponse {
   PaymentEventType eventType;
   PaymentStatus paymentStatus;
   PgProvider pgProvider;
-  String pgEventId;
-  String requestPayload;
-  String responsePayload;
-  String failureCode;
-  String failureMessage;
   LocalDateTime occurredAt;
 
   public static PaymentEventResponse of(PaymentEvent event) {
@@ -34,11 +29,6 @@ public class PaymentEventResponse {
         .eventType(event.getEventType())
         .paymentStatus(event.getPaymentStatus())
         .pgProvider(event.getPgProvider())
-        .pgEventId(event.getPgEventId())
-        .requestPayload(event.getRequestPayload())
-        .responsePayload(event.getResponsePayload())
-        .failureCode(event.getFailureCode())
-        .failureMessage(event.getFailureMessage())
         .occurredAt(event.getOccurredAt())
         .build();
   }

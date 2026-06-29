@@ -1,7 +1,7 @@
 package com.gieun.commerce.domain.payment.gateway;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,7 +16,7 @@ public class PaymentCancelResult {
   String pgStatus;
   String pgCancellationKey;
   BigDecimal cancelAmount;
-  LocalDateTime cancelledAt;
+  OffsetDateTime cancelledAt;
   String requestPayload;
   String responsePayload;
 }
