@@ -17,6 +17,7 @@ import com.gieun.commerce.domain.payment.dto.request.PaymentCancelRequest;
 import com.gieun.commerce.domain.payment.dto.request.PaymentConfirmRequest;
 import com.gieun.commerce.domain.payment.dto.request.PaymentCreateRequest;
 import com.gieun.commerce.domain.payment.dto.response.PaymentDetailResponse;
+import com.gieun.commerce.domain.payment.dto.response.PaymentResponse;
 import com.gieun.commerce.domain.payment.entity.Payment;
 import com.gieun.commerce.domain.payment.entity.PaymentCancellation;
 import com.gieun.commerce.domain.payment.entity.PaymentEvent;
@@ -141,6 +142,87 @@ class PaymentServiceTest {
     assertThat(event.getFailureCode()).isNull();
     assertThat(event.getFailureMessage()).isNull();
     assertThat(event.getOccurredAt()).isNotNull();
+  }
+
+  @Test
+  void requestAllowsRetryAfterFailedPayment() {
+    Long userId = 1L;
+    Long orderId = 10L;
+    Order order = Order.builder()
+        .id(orderId)
+        .userId(userId)
+        .status(OrderStatus.CREATED)
+        .totalProductPrice(new BigDecimal("30000.00"))
+        .discountAmount(BigDecimal.ZERO)
+        .shippingFee(BigDecimal.ZERO)
+        .totalPrice(new BigDecimal("30000.00"))
+        .orderedAt(LocalDateTime.now())
+        .build();
+    Payment failedPayment = Payment.request(
+        orderId,
+        userId,
+        "20260628000010FAILED123456",
+        PgProvider.TOSS,
+        PaymentMethod.CARD,
+        new BigDecimal("30000.00")
+    );
+    failedPayment.fail("PG_ERROR", "승인 실패");
+    PaymentCreateRequest request = PaymentCreateRequest.builder()
+        .orderId(orderId)
+        .method(PaymentMethod.CARD)
+        .build();
+
+    when(orderRepository.findByIdAndUserIdForUpdate(orderId, userId))
+        .thenReturn(Optional.of(order));
+    when(paymentRepository.findByOrderIdAndUserIdForUpdate(orderId, userId))
+        .thenReturn(Optional.of(failedPayment));
+    when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+      Payment payment = invocation.getArgument(0);
+      ReflectionTestUtils.setField(payment, "id", 101L);
+      return payment;
+    });
+
+    PaymentResponse response = paymentService.request(userId, request);
+
+    assertThat(response.getStatus()).isEqualTo(PaymentStatus.REQUESTED);
+    verify(paymentRepository).save(any(Payment.class));
+  }
+
+  @Test
+  void requestRejectsActivePayment() {
+    Long userId = 1L;
+    Long orderId = 10L;
+    Order order = Order.builder()
+        .id(orderId)
+        .userId(userId)
+        .status(OrderStatus.CREATED)
+        .totalProductPrice(new BigDecimal("30000.00"))
+        .discountAmount(BigDecimal.ZERO)
+        .shippingFee(BigDecimal.ZERO)
+        .totalPrice(new BigDecimal("30000.00"))
+        .orderedAt(LocalDateTime.now())
+        .build();
+    Payment requestedPayment = Payment.request(
+        orderId,
+        userId,
+        "20260628000010REQUEST1234",
+        PgProvider.TOSS,
+        PaymentMethod.CARD,
+        new BigDecimal("30000.00")
+    );
+    PaymentCreateRequest request = PaymentCreateRequest.builder()
+        .orderId(orderId)
+        .method(PaymentMethod.CARD)
+        .build();
+
+    when(orderRepository.findByIdAndUserIdForUpdate(orderId, userId))
+        .thenReturn(Optional.of(order));
+    when(paymentRepository.findByOrderIdAndUserIdForUpdate(orderId, userId))
+        .thenReturn(Optional.of(requestedPayment));
+
+    assertThatThrownBy(() -> paymentService.request(userId, request))
+        .isInstanceOfSatisfying(DomainException.class, exception ->
+            assertThat(exception.getCode()).isEqualTo(DomainExceptionCode.ALREADY_REQUESTED_PAYMENT.name()));
   }
 
   @Test
