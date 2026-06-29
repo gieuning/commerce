@@ -55,7 +55,13 @@ const parseResponseBody = async <TResponse>(
     return {};
   }
 
-  const parsedBody: unknown = JSON.parse(responseText);
+  let parsedBody: unknown;
+
+  try {
+    parsedBody = JSON.parse(responseText);
+  } catch {
+    return { data: responseText as TResponse };
+  }
 
   if (!isApiResponse<TResponse>(parsedBody)) {
     return { data: parsedBody as TResponse };

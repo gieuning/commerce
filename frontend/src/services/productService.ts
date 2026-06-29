@@ -16,10 +16,16 @@ interface ProductListParams {
   size?: number;
 }
 
+const normalizePageNumber = (page: number | undefined): number =>
+  Number.isInteger(page) && page >= 0 ? page : DEFAULT_PAGE_NUMBER;
+
+const normalizePageSize = (size: number | undefined): number =>
+  Number.isInteger(size) && size > 0 ? size : DEFAULT_PAGE_SIZE;
+
 const createProductListEndpoint = (params: ProductListParams): string => {
   const searchParams = new URLSearchParams();
-  searchParams.set("page", String(params.page ?? DEFAULT_PAGE_NUMBER));
-  searchParams.set("size", String(params.size ?? DEFAULT_PAGE_SIZE));
+  searchParams.set("page", String(normalizePageNumber(params.page)));
+  searchParams.set("size", String(normalizePageSize(params.size)));
 
   if (params.keyword) {
     searchParams.set("keyword", params.keyword);

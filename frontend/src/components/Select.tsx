@@ -1,4 +1,4 @@
-import type { SelectHTMLAttributes } from "react";
+import { useId, type SelectHTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -6,7 +6,8 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const Select = ({ children, className, id, label, ...selectProps }: SelectProps) => {
-  const selectId = id ?? selectProps.name ?? label;
+  const generatedId = useId();
+  const selectId = id ?? selectProps.name ?? generatedId;
 
   return (
     <label className="grid gap-2 text-sm font-medium text-ink" htmlFor={selectId}>

@@ -6,6 +6,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { Input } from "@/components/Input";
 import { LoadingState } from "@/components/LoadingState";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/Pagination";
 import { MESSAGES } from "@/constants/messages";
 import { productService } from "@/services/productService";
 import type { PageResult } from "@/types/api";
@@ -15,6 +16,7 @@ import { ProductCard } from "@/features/products/components/ProductCard";
 export const ProductListPage = () => {
   const [keyword, setKeyword] = useState("");
   const [submittedKeyword, setSubmittedKeyword] = useState("");
+  const [pageNumber, setPageNumber] = useState(0);
   const [productPage, setProductPage] = useState<PageResult<ProductSummary> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export const ProductListPage = () => {
     setErrorMessage(null);
 
     productService
-      .getProducts({ keyword: submittedKeyword || undefined })
+      .getProducts({ keyword: submittedKeyword || undefined, page: pageNumber })
       .then((nextProductPage) => {
         if (isMounted) {
           setProductPage(nextProductPage);
@@ -45,10 +47,11 @@ export const ProductListPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [submittedKeyword]);
+  }, [pageNumber, submittedKeyword]);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setPageNumber(0);
     setSubmittedKeyword(keyword.trim());
   };
 
@@ -78,11 +81,14 @@ export const ProductListPage = () => {
         <EmptyState message={MESSAGES.PRODUCT.EMPTY} />
       ) : null}
       {!isLoading && !errorMessage && productPage && productPage.content.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {productPage.content.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {productPage.content.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          <Pagination page={productPage} onPageChange={setPageNumber} />
+        </>
       ) : null}
     </section>
   );

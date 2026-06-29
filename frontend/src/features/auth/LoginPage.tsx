@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorState } from "@/components/ErrorState";
 import { Input } from "@/components/Input";
@@ -8,8 +8,15 @@ import { ROUTES } from "@/constants/routes";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useAuth } from "@/hooks/useAuth";
 
+interface RedirectLocation {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const { errorMessage, isLoading, runAsyncAction } = useAsyncAction();
   const [email, setEmail] = useState("");
@@ -20,7 +27,16 @@ export const LoginPage = () => {
     const loginResult = await runAsyncAction(() => login({ email, password }));
 
     if (loginResult !== null) {
-      void navigate(ROUTES.PRODUCTS);
+      const locationState = location.state as { from?: RedirectLocation | string } | null;
+      const from = locationState?.from;
+      const redirectTo =
+        typeof from === "string"
+          ? from
+          : from
+            ? `${from.pathname}${from.search}${from.hash}`
+            : ROUTES.PRODUCTS;
+
+      void navigate(redirectTo, { replace: true });
     }
   };
 

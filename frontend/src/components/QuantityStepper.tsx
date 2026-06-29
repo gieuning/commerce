@@ -5,6 +5,7 @@ interface QuantityStepperProps {
   value: number;
   min?: number;
   max?: number;
+  disabled?: boolean;
   label: string;
   onChange: (nextQuantity: number) => void;
 }
@@ -13,11 +14,12 @@ export const QuantityStepper = ({
   label,
   max,
   min = 1,
+  disabled = false,
   onChange,
   value,
 }: QuantityStepperProps) => {
-  const canDecrease = value > min;
-  const canIncrease = max === undefined || value < max;
+  const canDecrease = !disabled && value > min;
+  const canIncrease = !disabled && (max === undefined || value < max);
 
   return (
     <div className="grid gap-2">

@@ -8,7 +8,10 @@ interface ErrorStateProps {
 }
 
 export const ErrorState = ({ message = MESSAGES.COMMON.UNKNOWN_ERROR, onRetry }: ErrorStateProps) => (
-  <div className="grid min-h-48 place-items-center rounded-card border border-error/20 bg-error/5 p-8 text-center">
+  <div
+    className="grid min-h-48 place-items-center rounded-card border border-error/20 bg-error/5 p-8 text-center"
+    role="alert"
+  >
     <div>
       <AlertTriangle className="mx-auto text-error" size={28} />
       <p className="mt-3 text-sm font-medium text-error">{message}</p>

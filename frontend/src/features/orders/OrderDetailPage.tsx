@@ -15,12 +15,21 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { OrderItemTable } from "@/features/orders/components/OrderItemTable";
 
 const parseOrderId = (orderId: string | undefined): number | null => {
-  if (!orderId) {
+  if (!orderId || !/^\d+$/.test(orderId)) {
     return null;
   }
 
-  const parsedOrderId = Number(orderId);
-  return Number.isFinite(parsedOrderId) ? parsedOrderId : null;
+  return Number(orderId);
+};
+
+const getOrderStatusTone = (status: Order["status"]) => {
+  if (status === ORDER_STATUS.PAID) {
+    return "success";
+  }
+  if (status === ORDER_STATUS.CANCELLED) {
+    return "error";
+  }
+  return "warning";
 };
 
 export const OrderDetailPage = () => {
@@ -83,7 +92,7 @@ export const OrderDetailPage = () => {
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-4">
           <div className="flex flex-wrap items-center gap-3 rounded-card border border-line bg-surface p-4">
-            <StatusBadge label={order.status} tone={order.status === ORDER_STATUS.CANCELLED ? "error" : "warning"} />
+            <StatusBadge label={order.status} tone={getOrderStatusTone(order.status)} />
             <span className="text-sm text-ink-soft">결제 전 주문 상태를 확인하세요.</span>
           </div>
           <OrderItemTable items={order.items} />

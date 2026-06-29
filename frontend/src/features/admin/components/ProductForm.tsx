@@ -13,18 +13,20 @@ interface ProductFormProps {
 export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProps) => {
   const [name, setName] = useState(product?.name ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
-  const [price, setPrice] = useState(product?.price ?? "");
-  const [stock, setStock] = useState(product?.stock ?? 0);
+  const [price, setPrice] = useState(product ? String(product.price) : "");
+  const [stock, setStock] = useState(product ? String(product.stock) : "");
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const parsedPrice = Number(price);
+    const parsedStock = Number(stock);
 
     if (product) {
       onSubmit({
         name,
         description: description || undefined,
-        price,
+        price: parsedPrice,
         imageUrl: imageUrl || undefined,
       });
       return;
@@ -33,8 +35,8 @@ export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProp
     onSubmit({
       name,
       description: description || undefined,
-      price,
-      stock,
+      price: parsedPrice,
+      stock: parsedStock,
       imageUrl: imageUrl || undefined,
     });
   };
@@ -62,7 +64,7 @@ export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProp
           label="초기 재고"
           min="0"
           name="stock"
-          onChange={(event) => setStock(Number(event.target.value))}
+          onChange={(event) => setStock(event.target.value)}
           required
           type="number"
           value={stock}

@@ -36,6 +36,10 @@ export const CartPage = () => {
   }, []);
 
   const handleQuantityChange = async (cartItemId: number, quantity: number) => {
+    if (isActionLoading) {
+      return;
+    }
+
     const nextCart = await runAsyncAction(() =>
       cartService.updateCartItemQuantity(cartItemId, { quantity }),
     );
@@ -46,6 +50,10 @@ export const CartPage = () => {
   };
 
   const handleRemove = async (cartItemId: number) => {
+    if (isActionLoading) {
+      return;
+    }
+
     const removeResult = await runAsyncAction(() => cartService.removeCartItem(cartItemId));
 
     if (removeResult !== null) {
@@ -54,6 +62,10 @@ export const CartPage = () => {
   };
 
   const handleClear = async () => {
+    if (isActionLoading) {
+      return;
+    }
+
     const clearResult = await runAsyncAction(() => cartService.clearCart());
 
     if (clearResult !== null) {
@@ -62,7 +74,7 @@ export const CartPage = () => {
   };
 
   const handleCreateOrder = async () => {
-    if (!cart) {
+    if (!cart || isActionLoading) {
       return;
     }
 
@@ -94,7 +106,7 @@ export const CartPage = () => {
       <PageHeader
         action={
           cart.items.length > 0 ? (
-            <Button onClick={handleClear} variant="secondary">
+            <Button disabled={isActionLoading} onClick={handleClear} variant="secondary">
               전체 비우기
             </Button>
           ) : null
@@ -109,6 +121,7 @@ export const CartPage = () => {
           <div className="grid gap-4">
             {cart.items.map((cartItem) => (
               <CartItemRow
+                disabled={isActionLoading}
                 item={cartItem}
                 key={cartItem.itemId}
                 onQuantityChange={handleQuantityChange}

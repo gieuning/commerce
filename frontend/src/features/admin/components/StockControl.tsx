@@ -9,11 +9,15 @@ interface StockControlProps {
 }
 
 export const StockControl = ({ initialStock, isSubmitting, onSubmit }: StockControlProps) => {
-  const [stock, setStock] = useState(initialStock);
+  const [stock, setStock] = useState(String(initialStock));
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit(stock);
+    if (stock === "") {
+      return;
+    }
+
+    onSubmit(Number(stock));
   };
 
   return (
@@ -23,7 +27,7 @@ export const StockControl = ({ initialStock, isSubmitting, onSubmit }: StockCont
         label="재고"
         min="0"
         name="stock"
-        onChange={(event) => setStock(Number(event.target.value))}
+        onChange={(event) => setStock(event.target.value)}
         required
         type="number"
         value={stock}
