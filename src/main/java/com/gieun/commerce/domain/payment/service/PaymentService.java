@@ -71,7 +71,9 @@ public class PaymentService {
 
     paymentRepository.findByOrderIdAndUserIdForUpdate(order.getId(), userId)
         .ifPresent(payment -> {
-          throw new DomainException(DomainExceptionCode.ALREADY_REQUESTED_PAYMENT);
+          if (payment.getStatus() != PaymentStatus.FAILED) {
+            throw new DomainException(DomainExceptionCode.ALREADY_REQUESTED_PAYMENT);
+          }
         });
 
     Payment payment = Payment.request(
