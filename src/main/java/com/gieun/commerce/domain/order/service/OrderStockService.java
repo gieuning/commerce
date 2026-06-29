@@ -30,7 +30,8 @@ public class OrderStockService {
         continue;
       }
 
-      OptionCombination combination = combinationRepository.findByIdForUpdate(item.getOptionCombinationId())
+      OptionCombination combination = combinationRepository
+          .findByIdAndProductIdForUpdate(item.getOptionCombinationId(), item.getProductId())
           .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_OPTION_COMBINATION));
 
       combination.increaseStock(item.getQuantity());

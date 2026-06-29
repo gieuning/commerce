@@ -43,14 +43,32 @@ class PaymentTest {
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.REQUESTED);
   }
 
+  @Test
+  void requestRejectsNullAmountWithDomainException() {
+    assertThatThrownBy(() -> requestPayment(null))
+        .isInstanceOfSatisfying(DomainException.class, exception ->
+            assertThat(exception.getCode()).isEqualTo(DomainExceptionCode.INVALID_PAYMENT_AMOUNT.name()));
+  }
+
+  @Test
+  void requestRejectsNonPositiveAmountWithDomainException() {
+    assertThatThrownBy(() -> requestPayment(BigDecimal.ZERO))
+        .isInstanceOfSatisfying(DomainException.class, exception ->
+            assertThat(exception.getCode()).isEqualTo(DomainExceptionCode.INVALID_PAYMENT_AMOUNT.name()));
+  }
+
   private Payment requestedPayment() {
+    return requestPayment(new BigDecimal("30000.00"));
+  }
+
+  private Payment requestPayment(BigDecimal amount) {
     return Payment.request(
         10L,
         1L,
         "20260628000010ABCDEF123456",
         PgProvider.TOSS,
         PaymentMethod.CARD,
-        new BigDecimal("30000.00")
+        amount
     );
   }
 }
