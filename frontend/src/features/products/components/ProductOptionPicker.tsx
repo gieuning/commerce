@@ -5,7 +5,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 interface ProductOptionPickerProps {
   combinations: OptionCombination[];
   selectedCombinationId: number | null;
-  onChange: (combinationId: number) => void;
+  onChange: (combinationId: number | null) => void;
 }
 
 export const ProductOptionPicker = ({
@@ -15,7 +15,9 @@ export const ProductOptionPicker = ({
 }: ProductOptionPickerProps) => (
   <Select
     label="옵션"
-    onChange={(event) => onChange(Number(event.target.value))}
+    onChange={(event) =>
+      onChange(event.target.value === "" ? null : Number(event.target.value))
+    }
     required
     value={selectedCombinationId ?? ""}
   >

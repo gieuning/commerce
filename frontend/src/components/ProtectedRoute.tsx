@@ -18,7 +18,7 @@ export const ProtectedRoute = ({ requireAdmin = false }: ProtectedRouteProps) =>
   }
 
   if (!isAuthenticated) {
-    return <Navigate replace state={{ from: location.pathname }} to={ROUTES.LOGIN} />;
+    return <Navigate replace state={{ from: location }} to={ROUTES.LOGIN} />;
   }
 
   if (requireAdmin && !isAdmin) {

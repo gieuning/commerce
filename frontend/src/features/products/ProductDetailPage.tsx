@@ -82,11 +82,17 @@ export const ProductDetailPage = () => {
 
   const displayPrice = selectedCombination?.finalPrice ?? product?.price ?? "0";
   const availableStock = selectedCombination?.stock ?? product?.stock ?? 0;
+  const hasValidCombination =
+    !product?.hasOptions ||
+    (selectedCombination !== null &&
+      selectedCombination.status === PRODUCT_STATUS.FOR_SALE &&
+      selectedCombination.stock > 0);
+
   const canAddToCart =
     product !== null &&
     product.status === PRODUCT_STATUS.FOR_SALE &&
     availableStock > 0 &&
-    (!product.hasOptions || selectedCombinationId !== null);
+    hasValidCombination;
 
   const handleAddCart = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -98,7 +104,7 @@ export const ProductDetailPage = () => {
     const cartResult = await runAsyncAction(() =>
       cartService.addCartItem({
         productId,
-        optionCombinationId: selectedCombinationId ?? undefined,
+        optionCombinationId: selectedCombination?.id ?? undefined,
         quantity,
       }),
     );

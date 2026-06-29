@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from "react";
+import { useId, type InputHTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -7,7 +7,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = ({ className, errorMessage, id, label, ...inputProps }: InputProps) => {
-  const inputId = id ?? inputProps.name ?? label;
+  const generatedId = useId();
+  const inputId = id ?? inputProps.name ?? generatedId;
 
   return (
     <label className="grid gap-2 text-sm font-medium text-ink" htmlFor={inputId}>

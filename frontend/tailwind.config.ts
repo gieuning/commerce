@@ -24,7 +24,6 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "Pretendard", "system-ui", "sans-serif"],
-        display: ["Inter", "Pretendard", "system-ui", "sans-serif"],
       },
     },
   },

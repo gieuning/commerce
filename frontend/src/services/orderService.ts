@@ -1,13 +1,13 @@
 import { API_ENDPOINTS } from "@/constants/api";
 import { DEFAULT_PAGE_NUMBER, DEFAULT_PAGE_SIZE } from "@/constants/pagination";
 import type { PageResult } from "@/types/api";
-import type { Order, OrderCreateRequest } from "@/types/order";
+import type { Order, OrderCreateRequest, OrderStatus } from "@/types/order";
 import { apiClient } from "@/services/apiClient";
 
 interface OrderListParams {
   page?: number;
   size?: number;
-  status?: string;
+  status?: OrderStatus;
 }
 
 const createOrderListEndpoint = (params: OrderListParams): string => {

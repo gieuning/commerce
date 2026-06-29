@@ -1,4 +1,4 @@
-import type { TextareaHTMLAttributes } from "react";
+import { useId, type TextareaHTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -6,7 +6,8 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 export const Textarea = ({ className, id, label, ...textareaProps }: TextareaProps) => {
-  const textareaId = id ?? textareaProps.name ?? label;
+  const generatedId = useId();
+  const textareaId = id ?? textareaProps.name ?? generatedId;
 
   return (
     <label className="grid gap-2 text-sm font-medium text-ink" htmlFor={textareaId}>

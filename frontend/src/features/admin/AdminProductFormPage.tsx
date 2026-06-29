@@ -31,9 +31,15 @@ export const AdminProductFormPage = () => {
 
   useEffect(() => {
     if (!isEditMode || productId === null) {
+      setProduct(null);
+      setErrorMessage(null);
       setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
+    setErrorMessage(null);
+    setProduct(null);
 
     void productService
       .getProduct(productId)

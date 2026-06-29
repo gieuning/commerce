@@ -39,7 +39,7 @@ export interface ProductDetail extends ProductSummary {
 export interface ProductCreateRequest {
   name: string;
   description?: string;
-  price: string;
+  price: number;
   stock: number;
   imageUrl?: string;
 }
@@ -47,7 +47,7 @@ export interface ProductCreateRequest {
 export interface ProductUpdateRequest {
   name: string;
   description?: string;
-  price: string;
+  price: number;
   imageUrl?: string;
 }
 
