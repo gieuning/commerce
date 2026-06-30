@@ -30,4 +30,11 @@ export const API_ENDPOINTS = {
     DETAIL: (orderId: number) => `/orders/${orderId}`,
     CANCEL: (orderId: number) => `/orders/${orderId}/cancel`,
   },
+  PAYMENTS: {
+    LIST: "/payments",
+    DETAIL: (paymentId: number) => `/payments/${paymentId}`,
+    DETAIL_HISTORY: (paymentId: number) => `/payments/${paymentId}/details`,
+    CONFIRM: "/payments/confirm",
+    CANCEL: (paymentId: number) => `/payments/${paymentId}/cancel`,
+  },
 } as const;

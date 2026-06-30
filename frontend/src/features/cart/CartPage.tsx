@@ -11,6 +11,7 @@ import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { cartService } from "@/services/cartService";
 import { orderService } from "@/services/orderService";
 import type { Cart } from "@/types/cart";
+import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
 import { CartItemRow } from "@/features/cart/components/CartItemRow";
 import { CartSummary } from "@/features/cart/components/CartSummary";
 
@@ -27,7 +28,7 @@ export const CartPage = () => {
     cartService
       .getCart()
       .then(setCart)
-      .catch(() => setErrorMessage(MESSAGES.COMMON.UNKNOWN_ERROR))
+      .catch((error: unknown) => setErrorMessage(getApiErrorMessage(error)))
       .finally(() => setIsLoading(false));
   };
 

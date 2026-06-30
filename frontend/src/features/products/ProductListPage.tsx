@@ -6,53 +6,48 @@ import { ErrorState } from "@/components/ErrorState";
 import { Input } from "@/components/Input";
 import { LoadingState } from "@/components/LoadingState";
 import { PageHeader } from "@/components/PageHeader";
-import { Pagination } from "@/components/Pagination";
 import { MESSAGES } from "@/constants/messages";
-import { productService } from "@/services/productService";
-import type { PageResult } from "@/types/api";
-import type { ProductSummary } from "@/types/product";
 import { ProductCard } from "@/features/products/components/ProductCard";
+import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 
 export const ProductListPage = () => {
   const [keyword, setKeyword] = useState("");
-  const [submittedKeyword, setSubmittedKeyword] = useState("");
-  const [pageNumber, setPageNumber] = useState(0);
-  const [productPage, setProductPage] = useState<PageResult<ProductSummary> | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loadMoreElement, setLoadMoreElement] = useState<HTMLDivElement | null>(null);
+  const {
+    errorMessage,
+    hasNextPage,
+    isInitialLoading,
+    isLoadingMore,
+    loadNextPage,
+    products,
+    retryProductsRequest,
+    searchProducts,
+  } = useInfiniteProducts();
+  const hasProducts = products.length > 0;
+  const shouldShowInitialError = !isInitialLoading && !hasProducts && errorMessage;
 
   useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-    setErrorMessage(null);
+    if (!loadMoreElement) {
+      return undefined;
+    }
 
-    productService
-      .getProducts({ keyword: submittedKeyword || undefined, page: pageNumber })
-      .then((nextProductPage) => {
-        if (isMounted) {
-          setProductPage(nextProductPage);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          loadNextPage();
         }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setErrorMessage(MESSAGES.COMMON.UNKNOWN_ERROR);
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      });
+      },
+      { rootMargin: "240px 0px" },
+    );
 
-    return () => {
-      isMounted = false;
-    };
-  }, [pageNumber, submittedKeyword]);
+    observer.observe(loadMoreElement);
+
+    return () => observer.disconnect();
+  }, [loadMoreElement, loadNextPage]);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setPageNumber(0);
-    setSubmittedKeyword(keyword.trim());
+    searchProducts(keyword);
   };
 
   return (
@@ -75,19 +70,23 @@ export const ProductListPage = () => {
           검색
         </Button>
       </form>
-      {isLoading ? <LoadingState /> : null}
-      {errorMessage ? <ErrorState message={errorMessage} /> : null}
-      {!isLoading && !errorMessage && productPage?.content.length === 0 ? (
+      {isInitialLoading ? <LoadingState /> : null}
+      {shouldShowInitialError ? <ErrorState message={errorMessage} onRetry={retryProductsRequest} /> : null}
+      {!isInitialLoading && !errorMessage && !hasProducts ? (
         <EmptyState message={MESSAGES.PRODUCT.EMPTY} />
       ) : null}
-      {!isLoading && !errorMessage && productPage && productPage.content.length > 0 ? (
+      {!isInitialLoading && hasProducts ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {productPage.content.map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-          <Pagination page={productPage} onPageChange={setPageNumber} />
+          <div ref={setLoadMoreElement} className="flex min-h-16 items-center justify-center text-sm text-ink-soft">
+            {errorMessage ? <ErrorState message={errorMessage} onRetry={retryProductsRequest} /> : null}
+            {!errorMessage && isLoadingMore ? MESSAGES.PRODUCT.LOADING_MORE : null}
+            {!errorMessage && !isLoadingMore && !hasNextPage ? MESSAGES.PRODUCT.END_OF_LIST : null}
+          </div>
         </>
       ) : null}
     </section>

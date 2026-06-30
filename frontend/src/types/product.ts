@@ -22,6 +22,17 @@ export interface OptionGroup {
   values: string[];
 }
 
+export interface OptionGroupRequest {
+  name: string;
+  values: string[];
+}
+
+export interface OptionCombinationRequest {
+  optionValues: string[];
+  additionalPrice: number;
+  stock: number;
+}
+
 export interface OptionCombination {
   id: number;
   optionValues: string[];
@@ -40,8 +51,10 @@ export interface ProductCreateRequest {
   name: string;
   description?: string;
   price: number;
-  stock: number;
+  stock?: number;
   imageUrl?: string;
+  optionGroups?: OptionGroupRequest[];
+  combinations?: OptionCombinationRequest[];
 }
 
 export interface ProductUpdateRequest {

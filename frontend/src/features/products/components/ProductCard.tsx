@@ -1,22 +1,14 @@
 import { Link } from "react-router-dom";
 import { PriceText } from "@/components/PriceText";
 import { StatusBadge } from "@/components/StatusBadge";
+import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
-import { PRODUCT_STATUS, type ProductSummary } from "@/types/product";
+import { PRODUCT_STATUS_LABELS, PRODUCT_STATUS_TONES } from "@/constants/statusLabels";
+import type { ProductSummary } from "@/types/product";
 
 interface ProductCardProps {
   product: ProductSummary;
 }
-
-const getProductStatusLabel = (status: ProductSummary["status"]): string => {
-  if (status === PRODUCT_STATUS.FOR_SALE) {
-    return "판매중";
-  }
-  if (status === PRODUCT_STATUS.OUT_OF_STOCK) {
-    return "품절";
-  }
-  return "판매중지";
-};
 
 export const ProductCard = ({ product }: ProductCardProps) => (
   <Link
@@ -31,7 +23,9 @@ export const ProductCard = ({ product }: ProductCardProps) => (
           src={product.imageUrl}
         />
       ) : (
-        <div className="flex h-full items-center justify-center text-sm text-neutral">No image</div>
+        <div className="flex h-full items-center justify-center text-sm text-neutral">
+          {MESSAGES.PRODUCT.IMAGE_PLACEHOLDER}
+        </div>
       )}
     </div>
     <div className="grid gap-3 p-4">
@@ -40,8 +34,8 @@ export const ProductCard = ({ product }: ProductCardProps) => (
           {product.name}
         </h2>
         <StatusBadge
-          label={getProductStatusLabel(product.status)}
-          tone={product.status === PRODUCT_STATUS.FOR_SALE ? "success" : "warning"}
+          label={PRODUCT_STATUS_LABELS[product.status]}
+          tone={PRODUCT_STATUS_TONES[product.status]}
         />
       </div>
       <p className="line-clamp-2 min-h-10 text-sm leading-5 text-ink-soft">

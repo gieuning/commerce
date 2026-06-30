@@ -1,40 +1,27 @@
 import { CreditCard } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 import { PageHeader } from "@/components/PageHeader";
-import { PriceText } from "@/components/PriceText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { MESSAGES } from "@/constants/messages";
+import { ROUTES } from "@/constants/routes";
+import { ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "@/constants/statusLabels";
+import { PaymentAmountSummary } from "@/features/payments/components/PaymentAmountSummary";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { orderService } from "@/services/orderService";
 import { ORDER_STATUS, type Order } from "@/types/order";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
+import { parseRouteNumber } from "@/utils/parseRouteNumber";
 import { OrderItemTable } from "@/features/orders/components/OrderItemTable";
 
-const parseOrderId = (orderId: string | undefined): number | null => {
-  if (!orderId || !/^\d+$/.test(orderId)) {
-    return null;
-  }
-
-  return Number(orderId);
-};
-
-const getOrderStatusTone = (status: Order["status"]) => {
-  if (status === ORDER_STATUS.PAID) {
-    return "success";
-  }
-  if (status === ORDER_STATUS.CANCELLED) {
-    return "error";
-  }
-  return "warning";
-};
-
 export const OrderDetailPage = () => {
+  const navigate = useNavigate();
   const params = useParams();
-  const orderId = parseOrderId(params.orderId);
+  const orderId = parseRouteNumber(params.orderId);
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -52,7 +39,7 @@ export const OrderDetailPage = () => {
     orderService
       .getOrder(orderId)
       .then(setOrder)
-      .catch(() => setErrorMessage(MESSAGES.COMMON.UNKNOWN_ERROR))
+      .catch((error: unknown) => setErrorMessage(getApiErrorMessage(error)))
       .finally(() => setIsLoading(false));
   }, [orderId]);
 
@@ -81,6 +68,7 @@ export const OrderDetailPage = () => {
   }
 
   const canCancel = order.status === ORDER_STATUS.CREATED;
+  const canRequestPayment = order.status === ORDER_STATUS.CREATED;
 
   return (
     <section className="grid gap-6">
@@ -92,28 +80,22 @@ export const OrderDetailPage = () => {
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-4">
           <div className="flex flex-wrap items-center gap-3 rounded-card border border-line bg-surface p-4">
-            <StatusBadge label={order.status} tone={getOrderStatusTone(order.status)} />
+            <StatusBadge
+              label={ORDER_STATUS_LABELS[order.status]}
+              tone={ORDER_STATUS_TONES[order.status]}
+            />
             <span className="text-sm text-ink-soft">결제 전 주문 상태를 확인하세요.</span>
           </div>
           <OrderItemTable items={order.items} />
         </div>
         <aside className="grid h-fit gap-4 rounded-card border border-line bg-surface p-5">
           <h2 className="text-lg font-bold">결제 직전</h2>
-          <div className="grid gap-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-ink-soft">상품 금액</span>
-              <PriceText amount={order.totalProductPrice} className="font-semibold" />
-            </div>
-            <div className="flex justify-between">
-              <span className="text-ink-soft">배송비</span>
-              <PriceText amount={order.shippingFee} className="font-semibold" />
-            </div>
-            <div className="flex justify-between border-t border-line pt-3">
-              <span className="font-semibold">총 결제 금액</span>
-              <PriceText amount={order.totalPrice} className="text-lg font-bold" />
-            </div>
-          </div>
-          <Button disabled icon={<CreditCard size={16} />}>
+          <PaymentAmountSummary order={order} />
+          <Button
+            disabled={!canRequestPayment}
+            icon={<CreditCard size={16} />}
+            onClick={() => navigate(ROUTES.PAYMENT_CHECKOUT(order.orderId))}
+          >
             결제하기
           </Button>
           <p className="text-xs leading-5 text-ink-soft">{MESSAGES.ORDER.PAYMENT_PENDING}</p>

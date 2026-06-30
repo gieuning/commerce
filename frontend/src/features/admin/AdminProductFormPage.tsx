@@ -3,26 +3,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 import { PageHeader } from "@/components/PageHeader";
+import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { productService } from "@/services/productService";
 import type { ProductCreateRequest, ProductDetail, ProductUpdateRequest } from "@/types/product";
+import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
+import { parseRouteNumber } from "@/utils/parseRouteNumber";
 import { ProductForm } from "@/features/admin/components/ProductForm";
 import { StockControl } from "@/features/admin/components/StockControl";
-
-const parseProductId = (productId: string | undefined): number | null => {
-  if (!productId) {
-    return null;
-  }
-
-  const parsedProductId = Number(productId);
-  return Number.isFinite(parsedProductId) ? parsedProductId : null;
-};
 
 export const AdminProductFormPage = () => {
   const navigate = useNavigate();
   const params = useParams();
-  const productId = parseProductId(params.productId);
+  const productId = parseRouteNumber(params.productId);
   const isEditMode = productId !== null;
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [isLoading, setIsLoading] = useState(isEditMode);
@@ -44,7 +38,9 @@ export const AdminProductFormPage = () => {
     void productService
       .getProduct(productId)
       .then(setProduct)
-      .catch(() => setErrorMessage("상품 정보를 불러오지 못했습니다."))
+      .catch((error: unknown) =>
+        setErrorMessage(`${MESSAGES.ADMIN_PRODUCT.LOAD_FAILED} ${getApiErrorMessage(error)}`),
+      )
       .finally(() => setIsLoading(false));
   }, [isEditMode, productId]);
 
@@ -84,7 +80,7 @@ export const AdminProductFormPage = () => {
   return (
     <section className="grid gap-6">
       <PageHeader
-        description="상품 기본 정보를 입력합니다. 옵션 관리는 결제 연동 이후 확장합니다."
+        description={MESSAGES.ADMIN_PRODUCT.FORM_DESCRIPTION}
         title={isEditMode ? "상품 수정" : "상품 등록"}
       />
       {actionErrorMessage ? <ErrorState message={actionErrorMessage} /> : null}
