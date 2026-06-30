@@ -10,10 +10,12 @@ import { QuantityStepper } from "@/components/QuantityStepper";
 import { StatusBadge } from "@/components/StatusBadge";
 import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
+import { PRODUCT_STATUS_LABELS, PRODUCT_STATUS_TONES } from "@/constants/statusLabels";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { cartService } from "@/services/cartService";
 import { productService } from "@/services/productService";
 import { PRODUCT_STATUS, type ProductDetail } from "@/types/product";
+import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
 import { ProductOptionPicker } from "@/features/products/components/ProductOptionPicker";
 
 const parseProductId = (productId: string | undefined): number | null => {
@@ -58,9 +60,9 @@ export const ProductDetailPage = () => {
           setProduct(nextProduct);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (isMounted) {
-          setErrorMessage(MESSAGES.COMMON.UNKNOWN_ERROR);
+          setErrorMessage(getApiErrorMessage(error));
         }
       })
       .finally(() => {
@@ -130,15 +132,17 @@ export const ProductDetailPage = () => {
           {product.imageUrl ? (
             <img alt={product.name} className="aspect-[4/3] w-full object-cover" src={product.imageUrl} />
           ) : (
-            <div className="grid aspect-[4/3] place-items-center bg-line text-ink-soft">No image</div>
+            <div className="grid aspect-[4/3] place-items-center bg-line text-ink-soft">
+              {MESSAGES.PRODUCT.IMAGE_PLACEHOLDER}
+            </div>
           )}
         </div>
         <form className="grid h-fit gap-5 rounded-card border border-line bg-surface p-5" onSubmit={handleAddCart}>
           <div className="flex items-center justify-between gap-3">
             <PriceText amount={displayPrice} className="text-2xl font-bold" />
             <StatusBadge
-              label={product.status === PRODUCT_STATUS.FOR_SALE ? "판매중" : "구매불가"}
-              tone={product.status === PRODUCT_STATUS.FOR_SALE ? "success" : "warning"}
+              label={PRODUCT_STATUS_LABELS[product.status]}
+              tone={PRODUCT_STATUS_TONES[product.status]}
             />
           </div>
           {product.hasOptions ? (

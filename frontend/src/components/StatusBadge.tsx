@@ -1,13 +1,13 @@
 import { cn } from "@/utils/cn";
 
-type BadgeTone = "neutral" | "success" | "warning" | "error";
+export type StatusBadgeTone = "neutral" | "success" | "warning" | "error";
 
 interface StatusBadgeProps {
   label: string;
-  tone?: BadgeTone;
+  tone?: StatusBadgeTone;
 }
 
-const TONE_CLASSES: Record<BadgeTone, string> = {
+const TONE_CLASSES: Record<StatusBadgeTone, string> = {
   neutral: "bg-line text-ink-soft",
   success: "bg-success/10 text-success",
   warning: "bg-warning/15 text-yellow-700",

@@ -1,4 +1,5 @@
 import { Select } from "@/components/Select";
+import { PRODUCT_STATUS_LABELS } from "@/constants/statusLabels";
 import { PRODUCT_STATUS, type OptionCombination } from "@/types/product";
 import { formatCurrency } from "@/utils/formatCurrency";
 
@@ -29,7 +30,7 @@ export const ProductOptionPicker = ({
         value={combination.id}
       >
         {combination.optionValues.join(" / ")} · {formatCurrency(combination.finalPrice)} · 재고{" "}
-        {combination.stock}
+        {combination.stock} · {PRODUCT_STATUS_LABELS[combination.status]}
       </option>
     ))}
   </Select>
