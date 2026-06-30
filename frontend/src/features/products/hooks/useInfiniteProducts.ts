@@ -10,6 +10,7 @@ interface InfiniteProductsState {
   isLoadingMore: boolean;
   pageNumber: number;
   products: ProductSummary[];
+  searchRequestId: number;
   submittedKeyword: string;
 }
 
@@ -38,6 +39,7 @@ export const useInfiniteProducts = () => {
     isLoadingMore: false,
     pageNumber: 0,
     products: [],
+    searchRequestId: 0,
     submittedKeyword: "",
   });
 
@@ -91,7 +93,7 @@ export const useInfiniteProducts = () => {
     return () => {
       isMounted = false;
     };
-  }, [productState.pageNumber, productState.submittedKeyword]);
+  }, [productState.pageNumber, productState.searchRequestId, productState.submittedKeyword]);
 
   const searchProducts = useCallback((keyword: string) => {
     setProductState((currentState) => ({
@@ -100,6 +102,7 @@ export const useInfiniteProducts = () => {
       hasNextPage: true,
       pageNumber: 0,
       products: [],
+      searchRequestId: currentState.searchRequestId + 1,
       submittedKeyword: keyword.trim(),
     }));
   }, []);
@@ -119,9 +122,18 @@ export const useInfiniteProducts = () => {
     });
   }, []);
 
+  const retryProductsRequest = useCallback(() => {
+    setProductState((currentState) => ({
+      ...currentState,
+      errorMessage: null,
+      searchRequestId: currentState.searchRequestId + 1,
+    }));
+  }, []);
+
   return {
     ...productState,
     loadNextPage,
+    retryProductsRequest,
     searchProducts,
   };
 };
