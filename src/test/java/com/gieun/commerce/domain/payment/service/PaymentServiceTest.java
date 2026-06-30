@@ -3,6 +3,7 @@ package com.gieun.commerce.domain.payment.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -167,6 +168,8 @@ class PaymentServiceTest {
         new BigDecimal("30000.00")
     );
     failedPayment.fail("PG_ERROR", "승인 실패");
+    // 이미 영속된 실패 결제이므로 id가 존재한다. (재요청은 새 INSERT가 아니라 이 row를 재사용)
+    ReflectionTestUtils.setField(failedPayment, "id", 101L);
     PaymentCreateRequest request = PaymentCreateRequest.builder()
         .orderId(orderId)
         .method(PaymentMethod.CARD)
@@ -176,16 +179,15 @@ class PaymentServiceTest {
         .thenReturn(Optional.of(order));
     when(paymentRepository.findByOrderIdAndUserIdForUpdate(orderId, userId))
         .thenReturn(Optional.of(failedPayment));
-    when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
-      Payment payment = invocation.getArgument(0);
-      ReflectionTestUtils.setField(payment, "id", 101L);
-      return payment;
-    });
 
     PaymentResponse response = paymentService.request(userId, request);
 
+    // FAILED row를 재사용하여 REQUESTED로 리셋 (새 row INSERT 없음)
+    assertThat(response.getPaymentId()).isEqualTo(101L);
     assertThat(response.getStatus()).isEqualTo(PaymentStatus.REQUESTED);
-    verify(paymentRepository).save(any(Payment.class));
+    assertThat(failedPayment.getStatus()).isEqualTo(PaymentStatus.REQUESTED);
+    assertThat(failedPayment.getFailureCode()).isNull();
+    verify(paymentRepository, never()).save(any(Payment.class));
   }
 
   @Test
