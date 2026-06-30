@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -12,7 +12,7 @@ import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProduc
 
 export const ProductListPage = () => {
   const [keyword, setKeyword] = useState("");
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [loadMoreElement, setLoadMoreElement] = useState<HTMLDivElement | null>(null);
   const {
     errorMessage,
     hasNextPage,
@@ -20,12 +20,13 @@ export const ProductListPage = () => {
     isLoadingMore,
     loadNextPage,
     products,
+    retryProductsRequest,
     searchProducts,
   } = useInfiniteProducts();
+  const hasProducts = products.length > 0;
+  const shouldShowInitialError = !isInitialLoading && !hasProducts && errorMessage;
 
   useEffect(() => {
-    const loadMoreElement = loadMoreRef.current;
-
     if (!loadMoreElement) {
       return undefined;
     }
@@ -42,7 +43,7 @@ export const ProductListPage = () => {
     observer.observe(loadMoreElement);
 
     return () => observer.disconnect();
-  }, [loadNextPage]);
+  }, [loadMoreElement, loadNextPage]);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,20 +71,21 @@ export const ProductListPage = () => {
         </Button>
       </form>
       {isInitialLoading ? <LoadingState /> : null}
-      {errorMessage ? <ErrorState message={errorMessage} /> : null}
-      {!isInitialLoading && !errorMessage && products.length === 0 ? (
+      {shouldShowInitialError ? <ErrorState message={errorMessage} onRetry={retryProductsRequest} /> : null}
+      {!isInitialLoading && !errorMessage && !hasProducts ? (
         <EmptyState message={MESSAGES.PRODUCT.EMPTY} />
       ) : null}
-      {!isInitialLoading && !errorMessage && products.length > 0 ? (
+      {!isInitialLoading && hasProducts ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-          <div ref={loadMoreRef} className="flex min-h-16 items-center justify-center text-sm text-ink-soft">
-            {isLoadingMore ? MESSAGES.PRODUCT.LOADING_MORE : null}
-            {!isLoadingMore && !hasNextPage ? MESSAGES.PRODUCT.END_OF_LIST : null}
+          <div ref={setLoadMoreElement} className="flex min-h-16 items-center justify-center text-sm text-ink-soft">
+            {errorMessage ? <ErrorState message={errorMessage} onRetry={retryProductsRequest} /> : null}
+            {!errorMessage && isLoadingMore ? MESSAGES.PRODUCT.LOADING_MORE : null}
+            {!errorMessage && !isLoadingMore && !hasNextPage ? MESSAGES.PRODUCT.END_OF_LIST : null}
           </div>
         </>
       ) : null}

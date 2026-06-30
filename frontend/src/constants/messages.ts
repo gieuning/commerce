@@ -19,7 +19,7 @@ export const MESSAGES = {
     NOT_FOUND: "요청한 정보를 찾을 수 없습니다.",
     CONFLICT: "이미 변경된 정보입니다. 새로고침 후 다시 시도해 주세요.",
     SERVER_ERROR: "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-    NETWORK_ERROR: "서버에 연결할 수 없습니다. 백엔드 실행 상태를 확인해 주세요.",
+    NETWORK_ERROR: "일시적으로 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.",
   },
   PRODUCT: {
     EMPTY: "등록된 상품이 없습니다.",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MESSAGES } from "@/constants/messages";
 import type { OptionCombinationRequest, OptionGroupRequest, ProductCreateRequest } from "@/types/product";
+import { parseNonNegativeNumberField } from "@/utils/parseNumberField";
 
 export type ProductOptionMode = "single" | "option";
 
@@ -36,11 +37,6 @@ const parseOptionValues = (valuesText: string): string[] =>
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
 
-const parseNumberField = (fieldValue: string): number | null => {
-  const parsedValue = Number(fieldValue);
-  return Number.isFinite(parsedValue) ? parsedValue : null;
-};
-
 const createOptionGroupRequests = (groups: EditableOptionGroup[]): OptionGroupRequest[] | null => {
   const optionGroups = groups.map((group) => ({
     name: group.name.trim(),
@@ -58,8 +54,8 @@ const createCombinationRequests = (
   const optionCombinations: OptionCombinationRequest[] = [];
 
   for (const combination of combinations) {
-    const additionalPrice = parseNumberField(combination.additionalPrice);
-    const stock = parseNumberField(combination.stock);
+    const additionalPrice = parseNonNegativeNumberField(combination.additionalPrice);
+    const stock = parseNonNegativeNumberField(combination.stock);
 
     if (additionalPrice === null || stock === null) {
       return null;

@@ -8,17 +8,13 @@ import { MESSAGES } from "@/constants/messages";
 import { ProductOptionFields } from "@/features/admin/components/ProductOptionFields";
 import { useProductOptions, type ProductOptionMode } from "@/features/admin/hooks/useProductOptions";
 import type { ProductCreateRequest, ProductDetail, ProductUpdateRequest } from "@/types/product";
+import { parseNonNegativeNumberField, parsePositiveNumberField } from "@/utils/parseNumberField";
 
 interface ProductFormProps {
   product?: ProductDetail;
   isSubmitting: boolean;
   onSubmit: (requestBody: ProductCreateRequest | ProductUpdateRequest) => void;
 }
-
-const parseNumberField = (fieldValue: string): number | null => {
-  const parsedValue = Number(fieldValue);
-  return Number.isFinite(parsedValue) ? parsedValue : null;
-};
 
 export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProps) => {
   const [name, setName] = useState(product?.name ?? "");
@@ -29,8 +25,8 @@ export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProp
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null);
   const productOptions = useProductOptions();
 
-  const createBaseCreateRequest = (): Omit<ProductCreateRequest, "stock"> | null => {
-    const parsedPrice = parseNumberField(price);
+  const createBaseProductRequest = (): ProductUpdateRequest | null => {
+    const parsedPrice = parsePositiveNumberField(price);
 
     if (parsedPrice === null) {
       setFormErrorMessage(MESSAGES.ADMIN_PRODUCT.INVALID_NUMBER);
@@ -48,7 +44,7 @@ export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProp
   const createSingleProductRequest = (
     baseRequest: Omit<ProductCreateRequest, "stock">,
   ): ProductCreateRequest | null => {
-    const parsedStock = parseNumberField(stock);
+    const parsedStock = parseNonNegativeNumberField(stock);
 
     if (parsedStock === null) {
       setFormErrorMessage(MESSAGES.ADMIN_PRODUCT.INVALID_NUMBER);
@@ -59,7 +55,7 @@ export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProp
   };
 
   const createCreateRequest = (): ProductCreateRequest | null => {
-    const baseRequest = createBaseCreateRequest();
+    const baseRequest = createBaseProductRequest();
 
     if (!baseRequest) {
       return null;
@@ -70,12 +66,19 @@ export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProp
       : createSingleProductRequest(baseRequest);
   };
 
+  const createUpdateRequest = (): ProductUpdateRequest | null => createBaseProductRequest();
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormErrorMessage(null);
 
     if (product) {
-      onSubmit({ description: description || undefined, imageUrl: imageUrl || undefined, name, price: Number(price) });
+      const requestBody = createUpdateRequest();
+
+      if (requestBody) {
+        onSubmit(requestBody);
+      }
+
       return;
     }
 
