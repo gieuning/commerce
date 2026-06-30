@@ -10,10 +10,12 @@ import { PriceText } from "@/components/PriceText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
+import { PRODUCT_STATUS_LABELS, PRODUCT_STATUS_TONES } from "@/constants/statusLabels";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { productService } from "@/services/productService";
 import type { PageResult } from "@/types/api";
-import { PRODUCT_STATUS, type ProductSummary } from "@/types/product";
+import type { ProductSummary } from "@/types/product";
+import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
 
 export const AdminProductListPage = () => {
   const [productPage, setProductPage] = useState<PageResult<ProductSummary> | null>(null);
@@ -27,7 +29,7 @@ export const AdminProductListPage = () => {
     productService
       .getProducts()
       .then(setProductPage)
-      .catch(() => setErrorMessage(MESSAGES.COMMON.UNKNOWN_ERROR))
+      .catch((error: unknown) => setErrorMessage(getApiErrorMessage(error)))
       .finally(() => setIsLoading(false));
   };
 
@@ -82,8 +84,8 @@ export const AdminProductListPage = () => {
                   <td className="px-4 py-3">{product.stock}</td>
                   <td className="px-4 py-3">
                     <StatusBadge
-                      label={product.status}
-                      tone={product.status === PRODUCT_STATUS.FOR_SALE ? "success" : "warning"}
+                      label={PRODUCT_STATUS_LABELS[product.status]}
+                      tone={PRODUCT_STATUS_TONES[product.status]}
                     />
                   </td>
                   <td className="px-4 py-3">

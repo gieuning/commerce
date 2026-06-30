@@ -17,10 +17,10 @@ interface ProductListParams {
 }
 
 const normalizePageNumber = (page: number | undefined): number =>
-  Number.isInteger(page) && page >= 0 ? page : DEFAULT_PAGE_NUMBER;
+  typeof page === "number" && Number.isInteger(page) && page >= 0 ? page : DEFAULT_PAGE_NUMBER;
 
 const normalizePageSize = (size: number | undefined): number =>
-  Number.isInteger(size) && size > 0 ? size : DEFAULT_PAGE_SIZE;
+  typeof size === "number" && Number.isInteger(size) && size > 0 ? size : DEFAULT_PAGE_SIZE;
 
 const createProductListEndpoint = (params: ProductListParams): string => {
   const searchParams = new URLSearchParams();

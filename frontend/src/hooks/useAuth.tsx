@@ -9,9 +9,9 @@ import {
 } from "react";
 import { STORAGE_KEYS } from "@/constants/storageKeys";
 import { USER_ROLES } from "@/constants/userRoles";
-import { ApiError } from "@/services/apiClient";
 import { authService } from "@/services/authService";
 import type { LoginRequest, SignupRequest, UserProfile } from "@/types/auth";
+import { getApiErrorMessage, isSessionExpiredError } from "@/utils/getApiErrorMessage";
 
 interface AuthContextValue {
   user: UserProfile | null;
@@ -52,7 +52,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
     } catch (error) {
-      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+      if (isSessionExpiredError(error)) {
+        sessionStorage.setItem(STORAGE_KEYS.AUTH_NOTICE, getApiErrorMessage(error));
         logout();
         return;
       }

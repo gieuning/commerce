@@ -8,21 +8,13 @@ import { PriceText } from "@/components/PriceText";
 import { StatusBadge } from "@/components/StatusBadge";
 import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
+import { ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "@/constants/statusLabels";
 import { orderService } from "@/services/orderService";
 import type { PageResult } from "@/types/api";
-import { ORDER_STATUS, type Order } from "@/types/order";
+import type { Order } from "@/types/order";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
 import { useCallback, useEffect, useState } from "react";
-
-const getOrderStatusTone = (status: Order["status"]) => {
-  if (status === ORDER_STATUS.PAID) {
-    return "success";
-  }
-  if (status === ORDER_STATUS.CANCELLED) {
-    return "error";
-  }
-  return "warning";
-};
 
 export const OrderListPage = () => {
   const [pageNumber, setPageNumber] = useState(0);
@@ -41,9 +33,9 @@ export const OrderListPage = () => {
           setOrderPage(nextOrderPage);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (isActive()) {
-          setErrorMessage(MESSAGES.COMMON.UNKNOWN_ERROR);
+          setErrorMessage(getApiErrorMessage(error));
         }
       })
       .finally(() => {
@@ -82,7 +74,10 @@ export const OrderListPage = () => {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="font-semibold">주문 #{order.orderId}</h2>
-                    <StatusBadge label={order.status} tone={getOrderStatusTone(order.status)} />
+                    <StatusBadge
+                      label={ORDER_STATUS_LABELS[order.status]}
+                      tone={ORDER_STATUS_TONES[order.status]}
+                    />
                   </div>
                   <p className="mt-2 text-sm text-ink-soft">{formatDateTime(order.orderedAt)}</p>
                 </div>

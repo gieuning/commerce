@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { MESSAGES } from "@/constants/messages";
-import { ApiError } from "@/services/apiClient";
+import { useApiErrorHandler } from "@/hooks/useApiErrorHandler";
 
 interface AsyncActionState {
   isLoading: boolean;
@@ -8,6 +7,7 @@ interface AsyncActionState {
 }
 
 export const useAsyncAction = () => {
+  const handleApiError = useApiErrorHandler();
   const [actionState, setActionState] = useState<AsyncActionState>({
     isLoading: false,
     errorMessage: null,
@@ -21,9 +21,7 @@ export const useAsyncAction = () => {
       setActionState({ isLoading: false, errorMessage: null });
       return actionResult;
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof ApiError ? error.message : MESSAGES.COMMON.UNKNOWN_ERROR;
-      setActionState({ isLoading: false, errorMessage });
+      setActionState({ isLoading: false, errorMessage: handleApiError(error) });
       return null;
     }
   };

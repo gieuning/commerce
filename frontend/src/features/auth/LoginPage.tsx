@@ -1,10 +1,11 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorState } from "@/components/ErrorState";
 import { Input } from "@/components/Input";
 import { PageHeader } from "@/components/PageHeader";
 import { ROUTES } from "@/constants/routes";
+import { STORAGE_KEYS } from "@/constants/storageKeys";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -19,6 +20,7 @@ export const LoginPage = () => {
   const location = useLocation();
   const { login } = useAuth();
   const { errorMessage, isLoading, runAsyncAction } = useAsyncAction();
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -39,6 +41,15 @@ export const LoginPage = () => {
       void navigate(redirectTo, { replace: true });
     }
   };
+
+  useEffect(() => {
+    const authNotice = sessionStorage.getItem(STORAGE_KEYS.AUTH_NOTICE);
+
+    if (authNotice) {
+      setNoticeMessage(authNotice);
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH_NOTICE);
+    }
+  }, []);
 
   return (
     <section className="mx-auto max-w-md">
@@ -62,6 +73,7 @@ export const LoginPage = () => {
           type="password"
           value={password}
         />
+        {noticeMessage ? <ErrorState message={noticeMessage} /> : null}
         {errorMessage ? <ErrorState message={errorMessage} /> : null}
         <Button disabled={isLoading} type="submit">
           {isLoading ? "로그인 중" : "로그인"}
