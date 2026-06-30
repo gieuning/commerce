@@ -69,31 +69,35 @@ public class PaymentService {
       throw new DomainException(DomainExceptionCode.CANNOT_REQUEST_PAYMENT);
     }
 
-    paymentRepository.findByOrderIdAndUserIdForUpdate(order.getId(), userId)
-        .ifPresent(payment -> {
-          if (payment.getStatus() != PaymentStatus.FAILED) {
+    Payment payment = paymentRepository.findByOrderIdAndUserIdForUpdate(order.getId(), userId)
+        .map(existing -> {
+          if (existing.getStatus() != PaymentStatus.FAILED) {
             throw new DomainException(DomainExceptionCode.ALREADY_REQUESTED_PAYMENT);
           }
-        });
+          existing.retry(
+              createMerchantOrderId(order.getId()),
+              request.getMethod(),
+              order.getTotalPrice()
+          );
+          return existing;
+        })
+        .orElseGet(() -> paymentRepository.save(Payment.request(
+            order.getId(),
+            userId,
+            createMerchantOrderId(order.getId()),
+            PgProvider.TOSS,
+            request.getMethod(),
+            order.getTotalPrice()
+        )));
 
-    Payment payment = Payment.request(
-        order.getId(),
-        userId,
-        createMerchantOrderId(order.getId()),
-        PgProvider.TOSS,
-        request.getMethod(),
-        order.getTotalPrice()
-    );
-
-    Payment savedPayment = paymentRepository.save(payment);
     savePaymentEvent(
-        savedPayment,
+        payment,
         PaymentEventType.REQUESTED,
-        savedPayment.getStatus(),
+        payment.getStatus(),
         PaymentEventPayload.empty(),
         LocalDateTime.now()
     );
-    return PaymentResponse.of(savedPayment);
+    return PaymentResponse.of(payment);
   }
 
   @Transactional(readOnly = true)
