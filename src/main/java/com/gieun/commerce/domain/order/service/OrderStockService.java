@@ -38,6 +38,48 @@ public class OrderStockService {
     }
   }
 
+  // 결제 승인 시점의 권위 있는 차감 (락 잡고 진짜 차감 — restore와 동일한 락 순서로 데드락 방지)
+  public void decrease(Order order) {
+    for (OrderItem item : sortOrderItemsByStockLockOrder(order.getItems())) {
+      if (item.getOptionCombinationId() == null) {
+        Product product = productRepository.findByIdForUpdate(item.getProductId())
+            .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PRODUCT));
+
+        product.decreaseStock(item.getQuantity());
+        continue;
+      }
+
+      OptionCombination combination = combinationRepository
+          .findByIdAndProductIdForUpdate(item.getOptionCombinationId(), item.getProductId())
+          .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_OPTION_COMBINATION));
+
+      combination.decreaseStock(item.getQuantity());
+    }
+  }
+
+  // PG 호출 전 빠른 사전 체크 (논락, best-effort — 명백한 품절을 헛결제 전에 거른다)
+  public void ensureAvailable(Order order) {
+    for (OrderItem item : order.getItems()) {
+      if (item.getOptionCombinationId() == null) {
+        Product product = productRepository.findById(item.getProductId())
+            .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PRODUCT));
+
+        if (product.getStock() < item.getQuantity()) {
+          throw new DomainException(DomainExceptionCode.OUT_OF_STOCK_PRODUCT);
+        }
+        continue;
+      }
+
+      OptionCombination combination = combinationRepository
+          .findByIdAndProductId(item.getOptionCombinationId(), item.getProductId())
+          .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_OPTION_COMBINATION));
+
+      if (combination.getStock() < item.getQuantity()) {
+        throw new DomainException(DomainExceptionCode.OUT_OF_STOCK_OPTION_COMBINATION);
+      }
+    }
+  }
+
   private List<OrderItem> sortOrderItemsByStockLockOrder(List<OrderItem> items) {
     return items.stream()
         .sorted(Comparator

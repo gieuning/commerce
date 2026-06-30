@@ -9,8 +9,10 @@ import com.gieun.commerce.domain.payment.dto.request.PaymentConfirmRequest;
 import com.gieun.commerce.domain.payment.dto.request.PaymentCreateRequest;
 import com.gieun.commerce.domain.payment.dto.response.PaymentDetailResponse;
 import com.gieun.commerce.domain.payment.dto.response.PaymentResponse;
+import com.gieun.commerce.domain.payment.entity.CompensationStatus;
 import com.gieun.commerce.domain.payment.entity.Payment;
 import com.gieun.commerce.domain.payment.entity.PaymentCancellation;
+import com.gieun.commerce.domain.payment.entity.PaymentCompensation;
 import com.gieun.commerce.domain.payment.entity.PaymentEvent;
 import com.gieun.commerce.domain.payment.entity.PaymentEvent.CreateCommand;
 import com.gieun.commerce.domain.payment.entity.PaymentEventType;
@@ -24,6 +26,7 @@ import com.gieun.commerce.domain.payment.gateway.PaymentConfirmResult;
 import com.gieun.commerce.domain.payment.gateway.PaymentGateway;
 import com.gieun.commerce.domain.payment.gateway.PaymentGatewayException;
 import com.gieun.commerce.domain.payment.repository.PaymentCancellationRepository;
+import com.gieun.commerce.domain.payment.repository.PaymentCompensationRepository;
 import com.gieun.commerce.domain.payment.repository.PaymentEventRepository;
 import com.gieun.commerce.domain.payment.repository.PaymentRepository;
 import com.gieun.commerce.domain.payment.repository.PaymentReceiptRepository;
@@ -53,6 +56,7 @@ public class PaymentService {
   private final PaymentRepository paymentRepository;
   private final PaymentEventRepository paymentEventRepository;
   private final PaymentCancellationRepository paymentCancellationRepository;
+  private final PaymentCompensationRepository paymentCompensationRepository;
   private final PaymentReceiptRepository paymentReceiptRepository;
   private final OrderRepository orderRepository;
   private final OrderStockService orderStockService;
@@ -168,6 +172,7 @@ public class PaymentService {
         .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PAYMENT));
 
     validateConfirmable(order, payment, request);
+    orderStockService.ensureAvailable(order); // stage 1: PG 호출 전 재고 사전 체크 (헛결제 방지)
 
     return new ConfirmContext(userId, payment.getId());
   }
@@ -190,6 +195,7 @@ public class PaymentService {
     try {
       validateConfirmable(order, payment, request);
       validateConfirmResult(payment, request, result);
+      orderStockService.decrease(order); // stage 2: 권위 있는 차감. 부족 시 throw → catch → failure 리턴 → 보상(환불)
     } catch (DomainException exception) {
       return PaymentTransactionResult.failure(DomainExceptionCode.valueOf(exception.getCode()));
     }
@@ -233,6 +239,7 @@ public class PaymentService {
       );
     }
 
+    recordCompensationOutcome(payment, result, compensationException);
     failPayment(payment, result, exceptionCode);
     return PaymentTransactionResult.failure(exceptionCode);
   }
@@ -452,10 +459,7 @@ public class PaymentService {
   }
 
   private PaymentGatewayException compensateConfirmedPayment(PaymentConfirmResult result) {
-    if (!"DONE".equals(result.getPgStatus())
-        || result.getPaymentKey() == null
-        || result.getPaymentKey().isBlank()
-        || result.getTotalAmount() == null) {
+    if (!isCompensatable(result)) {
       return null;
     }
 
@@ -471,6 +475,49 @@ public class PaymentService {
     } catch (PaymentGatewayException exception) {
       return exception;
     }
+  }
+
+  // PG에 실제 결제(DONE)가 잡혀 있어 환불(보상)할 대상이 있는가
+  private boolean isCompensatable(PaymentConfirmResult result) {
+    return "DONE".equals(result.getPgStatus())
+        && result.getPaymentKey() != null
+        && !result.getPaymentKey().isBlank()
+        && result.getTotalAmount() != null;
+  }
+
+  /**
+   * 보상(환불) 시도 결과를 아웃박스에 기록한다. 동기 시도가 실패(compensationException != null)했으면
+   * PENDING으로 남겨 스케줄러가 재시도하고, 성공했으면 DONE으로 감사 기록만 남긴다.
+   */
+  private void recordCompensationOutcome(
+      Payment payment,
+      PaymentConfirmResult result,
+      PaymentGatewayException compensationException
+  ) {
+    if (!isCompensatable(result)) {
+      return; // PG에 결제가 없으면 환불할 것도 없음
+    }
+
+    boolean failed = compensationException != null;
+    LocalDateTime now = LocalDateTime.now();
+
+    PaymentCompensation compensation = PaymentCompensation.of(
+        PaymentCompensation.CreateCommand.builder()
+            .paymentId(payment.getId())
+            .pgProvider(payment.getPgProvider())
+            .paymentKey(result.getPaymentKey())
+            .cancelAmount(result.getTotalAmount())
+            .reason(COMPENSATING_CANCEL_REASON)
+            .status(failed ? CompensationStatus.PENDING : CompensationStatus.DONE)
+            .attemptCount(1) // confirm()에서 동기 시도 1회를 이미 수행함
+            .maxAttempts(PaymentCompensation.DEFAULT_MAX_ATTEMPTS)
+            .nextRetryAt(failed ? PaymentCompensation.nextRetryAt(1, now) : null)
+            .lastError(failed
+                ? compensationException.getPgCode() + ": " + compensationException.getPgMessage()
+                : null)
+            .build()
+    );
+    paymentCompensationRepository.save(compensation);
   }
 
   private void saveReceipt(Payment payment, PaymentConfirmResult result) {

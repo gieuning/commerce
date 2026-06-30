@@ -6,7 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gieun.commerce.domain.payment.gateway.PaymentCancelResult;
 import com.gieun.commerce.domain.payment.gateway.PaymentGatewayException;
 import com.gieun.commerce.global.exception.DomainExceptionCode;
 import java.time.Duration;
@@ -98,6 +100,53 @@ class TossPaymentGatewayTest {
 
     assertThat(nullPayload).isNull();
     assertThat(blankPayload).isNull();
+  }
+
+  @Test
+  void treatsAlreadyCanceledAndRefundedCodesAsIdempotentSuccess() {
+    TossPaymentGateway gateway = gateway();
+
+    assertThat((Boolean) ReflectionTestUtils.invokeMethod(
+        gateway, "isIdempotentlyCanceled", "ALREADY_CANCELED_PAYMENT")).isTrue();
+    assertThat((Boolean) ReflectionTestUtils.invokeMethod(
+        gateway, "isIdempotentlyCanceled", "ALREADY_REFUND_PAYMENT")).isTrue();
+  }
+
+  @Test
+  void doesNotTreatGenuineCancelFailuresAsIdempotentSuccess() {
+    TossPaymentGateway gateway = gateway();
+
+    assertThat((Boolean) ReflectionTestUtils.invokeMethod(
+        gateway, "isIdempotentlyCanceled", "NOT_CANCELABLE_PAYMENT")).isFalse();
+    assertThat((Boolean) ReflectionTestUtils.invokeMethod(
+        gateway, "isIdempotentlyCanceled", (String) null)).isFalse();
+  }
+
+  @Test
+  void buildsCancelResultFromLatestCancelOfPaymentPayload() throws Exception {
+    TossPaymentGateway gateway = gateway();
+    JsonNode response = new ObjectMapper().readTree("""
+        {
+          "paymentKey": "test_payment_key",
+          "status": "CANCELED",
+          "cancels": [
+            {"transactionKey": "txn_old", "cancelAmount": 10000, "canceledAt": "2026-06-29T10:00:00+09:00"},
+            {"transactionKey": "txn_latest", "cancelAmount": 30000, "canceledAt": "2026-06-29T13:34:56+09:00"}
+          ]
+        }
+        """);
+
+    PaymentCancelResult result = ReflectionTestUtils.invokeMethod(
+        gateway, "toCancelResult", response, "req-payload", "resp-payload");
+
+    assertThat(result).isNotNull();
+    assertThat(result.getPaymentKey()).isEqualTo("test_payment_key");
+    assertThat(result.getPgStatus()).isEqualTo("CANCELED");
+    assertThat(result.getPgCancellationKey()).isEqualTo("txn_latest");
+    assertThat(result.getCancelAmount()).isEqualByComparingTo("30000");
+    assertThat(result.getCancelledAt()).isEqualTo(OffsetDateTime.parse("2026-06-29T13:34:56+09:00"));
+    assertThat(result.getRequestPayload()).isEqualTo("req-payload");
+    assertThat(result.getResponsePayload()).isEqualTo("resp-payload");
   }
 
   private TossPaymentGateway gateway() {
