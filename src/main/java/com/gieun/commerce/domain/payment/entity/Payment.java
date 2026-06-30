@@ -91,6 +91,20 @@ public class Payment extends BaseEntity {
         .build();
   }
 
+  public void retry(String merchantOrderId, PaymentMethod method, BigDecimal amount) {
+    validateStatus(PaymentStatus.FAILED, DomainExceptionCode.CANNOT_REQUEST_PAYMENT);
+    validateAmount(amount);
+
+    this.merchantOrderId = Objects.requireNonNull(merchantOrderId, "주문 번호는 필수입니다.");
+    this.method = Objects.requireNonNull(method, "결제 수단은 필수입니다.");
+    this.amount = amount;
+    this.status = PaymentStatus.REQUESTED;
+    this.paymentKey = null;
+    this.approvedAt = null;
+    this.failureCode = null;
+    this.failureMessage = null;
+  }
+
   public void approve(String paymentKey, LocalDateTime approvedAt) {
     validateStatus(PaymentStatus.REQUESTED, DomainExceptionCode.CANNOT_CONFIRM_PAYMENT);
     this.paymentKey = Objects.requireNonNull(paymentKey, "PG 결제 키는 필수입니다.");
