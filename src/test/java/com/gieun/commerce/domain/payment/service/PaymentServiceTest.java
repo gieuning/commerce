@@ -19,8 +19,10 @@ import com.gieun.commerce.domain.payment.dto.request.PaymentConfirmRequest;
 import com.gieun.commerce.domain.payment.dto.request.PaymentCreateRequest;
 import com.gieun.commerce.domain.payment.dto.response.PaymentDetailResponse;
 import com.gieun.commerce.domain.payment.dto.response.PaymentResponse;
+import com.gieun.commerce.domain.payment.entity.CompensationStatus;
 import com.gieun.commerce.domain.payment.entity.Payment;
 import com.gieun.commerce.domain.payment.entity.PaymentCancellation;
+import com.gieun.commerce.domain.payment.entity.PaymentCompensation;
 import com.gieun.commerce.domain.payment.entity.PaymentEvent;
 import com.gieun.commerce.domain.payment.entity.PaymentEventType;
 import com.gieun.commerce.domain.payment.entity.PaymentMethod;
@@ -550,6 +552,63 @@ class PaymentServiceTest {
 
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CANCELLED);
     verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any(TransactionCallback.class));
+  }
+
+  
+
+  @Test
+  void confirmCompensatesAndRecordsDoneWhenStockRunsOut() {
+    ConfirmFixture fixture = setUpConfirmFixture();
+    when(paymentGateway.confirm(any())).thenReturn(confirmResult(fixture).build());
+
+    // stage 2 재고 차감에서 품절 → failure 리턴 경로로 진입
+    org.mockito.Mockito.doThrow(new DomainException(DomainExceptionCode.OUT_OF_STOCK_PRODUCT))
+        .when(orderStockService).decrease(any());
+    // 보상 환불(cancel)은 성공: 기본 mock이 예외 없이 반환 → 성공으로 간주됨
+
+    assertThatThrownBy(() -> paymentService.confirm(fixture.userId(), fixture.request()))
+        .isInstanceOfSatisfying(DomainException.class, e ->
+            assertThat(e.getCode()).isEqualTo(DomainExceptionCode.OUT_OF_STOCK_PRODUCT.name()));
+
+    // 보상 환불이 실제로 시도됐는가
+    assertCompensatingCancelRequested(fixture.request().getPaymentKey(), fixture.amount());
+
+    // 아웃박스에 DONE으로 기록됐는가
+    ArgumentCaptor<PaymentCompensation> captor = ArgumentCaptor.forClass(PaymentCompensation.class);
+    verify(paymentCompensationRepository).save(captor.capture());
+    PaymentCompensation compensation = captor.getValue();
+    assertThat(compensation.getStatus()).isEqualTo(CompensationStatus.DONE);
+    assertThat(compensation.getAttemptCount()).isEqualTo(1);
+    assertThat(compensation.getNextRetryAt()).isNull();
+
+    // 결제는 FAILED로 마감
+    assertThat(fixture.payment().getStatus()).isEqualTo(PaymentStatus.FAILED);
+  }
+
+  @Test
+  void confirmRecordsPendingCompensationWhenRefundFails() {
+    ConfirmFixture fixture = setUpConfirmFixture();
+    when(paymentGateway.confirm(any())).thenReturn(confirmResult(fixture).build());
+    org.mockito.Mockito.doThrow(new DomainException(DomainExceptionCode.OUT_OF_STOCK_PRODUCT))
+        .when(orderStockService).decrease(any());
+    // 보상 환불(cancel)마저 실패 → PENDING으로 남겨 스케줄러가 재시도해야 함
+    when(paymentGateway.cancel(any())).thenThrow(new PaymentGatewayException(
+        DomainExceptionCode.PAYMENT_CANCEL_FAILED, "PG_CANCEL_ERR", "취소 실패",
+        "{\"code\":\"PG_CANCEL_ERR\"}"));
+
+    assertThatThrownBy(() -> paymentService.confirm(fixture.userId(), fixture.request()))
+        .isInstanceOfSatisfying(DomainException.class, e ->
+            assertThat(e.getCode()).isEqualTo(DomainExceptionCode.OUT_OF_STOCK_PRODUCT.name()));
+
+    ArgumentCaptor<PaymentCompensation> captor = ArgumentCaptor.forClass(PaymentCompensation.class);
+    verify(paymentCompensationRepository).save(captor.capture());
+    PaymentCompensation compensation = captor.getValue();
+    assertThat(compensation.getStatus()).isEqualTo(CompensationStatus.PENDING);
+    assertThat(compensation.getAttemptCount()).isEqualTo(1);
+    assertThat(compensation.getNextRetryAt()).isNotNull();
+    assertThat(compensation.getLastError()).contains("PG_CANCEL_ERR");
+
+    assertThat(fixture.payment().getStatus()).isEqualTo(PaymentStatus.FAILED);
   }
 
   private ConfirmFixture setUpConfirmFixture() {
