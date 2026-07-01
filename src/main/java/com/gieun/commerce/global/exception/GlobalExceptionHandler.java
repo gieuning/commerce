@@ -66,6 +66,21 @@ public class GlobalExceptionHandler {
         "다른 요청에서 먼저 변경되었습니다. 다시 조회 후 시도해 주세요.");
   }
 
+  @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
+      org.springframework.security.access.AccessDeniedException ex) {
+    // @PreAuthorize 등 메서드 시큐리티 거부는 컨트롤러 호출 중 발생해 일반 Exception 핸들러(500)로 새기 쉬움 → 403으로 명시 매핑
+    log.warn("[AccessDenied] : {}", ex.getMessage());
+    return ApiResponse.fail(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "접근 권한이 없습니다.");
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
+    // 엔티티/도메인 규칙 위반(음수 금액·수량 등)은 잘못된 입력이므로 500이 아니라 400으로 응답한다.
+    log.warn("[IllegalArgumentException] : {}", ex.getMessage());
+    return ApiResponse.fail(HttpStatus.BAD_REQUEST, VALIDATION_ERROR, ex.getMessage());
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
     String traceId = UUID.randomUUID().toString().substring(0, 8);
