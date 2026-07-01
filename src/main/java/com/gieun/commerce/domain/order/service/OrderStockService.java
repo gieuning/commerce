@@ -8,6 +8,7 @@ import com.gieun.commerce.domain.product.repository.OptionCombinationRepository;
 import com.gieun.commerce.domain.product.repository.ProductRepository;
 import com.gieun.commerce.global.exception.DomainException;
 import com.gieun.commerce.global.exception.DomainExceptionCode;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -39,13 +40,22 @@ public class OrderStockService {
   }
 
   // 결제 승인 시점의 권위 있는 차감 (락 잡고 진짜 차감 — restore와 동일한 락 순서로 데드락 방지)
+  //
+  // 2-pass: 모든 아이템을 락 잡고 "검증"만 먼저 끝낸 뒤, 전부 통과했을 때만 "일괄 차감"한다.
+  // 승인 실패 경로에서 예외가 catch되어 트랜잭션이 커밋되더라도, 앞 아이템만 부분 차감되어
+  // 팬텀 재고 손실이 발생하는 것을 원천 차단한다. (모든 행에 FOR UPDATE 락을 쥐고 있어 2-pass 사이 경합 없음)
   public void decrease(Order order) {
+    List<Runnable> decrements = new ArrayList<>();
+
     for (OrderItem item : sortOrderItemsByStockLockOrder(order.getItems())) {
       if (item.getOptionCombinationId() == null) {
         Product product = productRepository.findByIdForUpdate(item.getProductId())
             .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PRODUCT));
 
-        product.decreaseStock(item.getQuantity());
+        if (product.getStock() < item.getQuantity()) {
+          throw new DomainException(DomainExceptionCode.OUT_OF_STOCK_PRODUCT);
+        }
+        decrements.add(() -> product.decreaseStock(item.getQuantity()));
         continue;
       }
 
@@ -53,8 +63,13 @@ public class OrderStockService {
           .findByIdAndProductIdForUpdate(item.getOptionCombinationId(), item.getProductId())
           .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_OPTION_COMBINATION));
 
-      combination.decreaseStock(item.getQuantity());
+      if (combination.getStock() < item.getQuantity()) {
+        throw new DomainException(DomainExceptionCode.OUT_OF_STOCK_OPTION_COMBINATION);
+      }
+      decrements.add(() -> combination.decreaseStock(item.getQuantity()));
     }
+
+    decrements.forEach(Runnable::run);
   }
 
   // PG 호출 전 빠른 사전 체크 (논락, best-effort — 명백한 품절을 헛결제 전에 거른다)
