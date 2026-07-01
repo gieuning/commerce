@@ -213,7 +213,7 @@ public class PaymentService {
       validateConfirmResult(payment, request, result);
       orderStockService.decrease(order); // stage 2: 권위 있는 차감. 부족 시 throw → catch → failure 리턴 → 보상(환불)
     } catch (DomainException exception) {
-      return PaymentTransactionResult.failure(DomainExceptionCode.valueOf(exception.getCode()));
+      return PaymentTransactionResult.failure(exception.getExceptionCode());
     }
 
     approvePayment(order, payment, result);
