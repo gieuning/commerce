@@ -11,10 +11,12 @@ import lombok.experimental.FieldDefaults;
 public class TokenResponse {
 
   String accessToken;
+  Long userId;
 
-  public static TokenResponse of(String accessToken) {
+  public static TokenResponse of(String accessToken, Long userId) {
     return TokenResponse.builder()
         .accessToken(accessToken)
+        .userId(userId)
         .build();
   }
 }

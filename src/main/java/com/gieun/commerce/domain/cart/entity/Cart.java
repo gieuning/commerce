@@ -52,6 +52,12 @@ public class Cart extends BaseEntity {
     return Cart.builder().guestToken(guestToken).build();
   }
 
+  // 게스트 카트를 회원 카트로 전환한다. (user_id 설정 + guest_token 제거 → chk_carts_owner XOR 유지)
+  public void assignToUser(Long userId) {
+    this.userId = Objects.requireNonNull(userId, "회원 ID는 필수입니다.");
+    this.guestToken = null;
+  }
+
   public void addItem(Long productId, Long optionCombinationId, int quantity) {
     findItem(productId, optionCombinationId).ifPresentOrElse(
         item -> item.increaseQuantity(quantity),
