@@ -6,8 +6,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.gieun.commerce.domain.payment.alert.PaymentCompensationAlert;
 import com.gieun.commerce.domain.payment.entity.CompensationStatus;
 import com.gieun.commerce.domain.payment.entity.PaymentCompensation;
 import com.gieun.commerce.domain.payment.entity.PgProvider;
@@ -41,6 +44,9 @@ class PaymentCompensationServiceTest {
 
   @Mock
   TransactionTemplate transactionTemplate;
+
+  @Mock
+  PaymentCompensationAlert compensationAlert;
 
   @InjectMocks
   PaymentCompensationService service;
@@ -79,6 +85,8 @@ class PaymentCompensationServiceTest {
     assertThat(compensation.getAttemptCount()).isEqualTo(2);
     assertThat(compensation.getNextRetryAt()).isNotNull();
     assertThat(compensation.getLastError()).contains("PG_CANCEL_ERR");
+    // 아직 재시도 여지가 있으므로 GAVE_UP 알림은 울리지 않는다
+    verify(compensationAlert, never()).giveUp(any());
   }
 
   @Test
@@ -92,6 +100,8 @@ class PaymentCompensationServiceTest {
 
     assertThat(compensation.getStatus()).isEqualTo(CompensationStatus.GAVE_UP);
     assertThat(compensation.getNextRetryAt()).isNull();
+    // 최종 실패 → 운영자 알림 훅 호출
+    verify(compensationAlert).giveUp(compensation);
   }
 
   private PaymentCompensation pendingCompensation(int attemptCount) {
