@@ -176,6 +176,14 @@ public class PaymentService {
         .orElse(null);
   }
 
+  // 이미 취소 완료된 결제면 기존 결과를 반환한다. 그 외(미취소)는 null → 정상 취소 흐름 진행.
+  private PaymentResponse findAlreadyCancelled(Long userId, Long paymentId) {
+    return paymentRepository.findByIdAndUserId(paymentId, userId)
+        .filter(payment -> payment.getStatus() == PaymentStatus.CANCELLED)
+        .map(PaymentResponse::of)
+        .orElse(null);
+  }
+
   private ConfirmContext prepareConfirm(Long userId, PaymentConfirmRequest request) {
     Payment paymentSnapshot = paymentRepository
         .findByMerchantOrderIdAndUserId(request.getMerchantOrderId(), userId)
@@ -261,6 +269,12 @@ public class PaymentService {
   }
 
   public PaymentResponse cancel(Long userId, Long paymentId, PaymentCancelRequest request) {
+    // 멱등: 이미 취소된 결제에 대한 재요청(중복 클릭/재시도)이면 기존 결과를 그대로 반환 (PG 재호출 없음)
+    PaymentResponse alreadyCancelled = findAlreadyCancelled(userId, paymentId);
+    if (alreadyCancelled != null) {
+      return alreadyCancelled;
+    }
+
     CancelContext context = Objects.requireNonNull(
         transactionTemplate.execute(status -> prepareCancel(userId, paymentId, request))
     );
