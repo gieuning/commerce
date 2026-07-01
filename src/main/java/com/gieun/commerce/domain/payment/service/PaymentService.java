@@ -126,6 +126,12 @@ public class PaymentService {
   }
 
   public PaymentResponse confirm(Long userId, PaymentConfirmRequest request) {
+    // 멱등: 이미 같은 결제키로 승인된 건에 대한 재호출(콜백 새로고침/재시도)이면 기존 결과를 그대로 반환
+    PaymentResponse alreadyApproved = findAlreadyApproved(userId, request);
+    if (alreadyApproved != null) {
+      return alreadyApproved;
+    }
+
     ConfirmContext context = Objects.requireNonNull(
         transactionTemplate.execute(status -> prepareConfirm(userId, request))
     );
@@ -158,6 +164,16 @@ public class PaymentService {
     }
 
     return result.response();
+  }
+
+  // 이미 승인 완료된 결제(같은 결제키·금액)면 기존 결과를 반환한다. 그 외(미승인/키·금액 불일치)는 null → 정상 흐름 진행.
+  private PaymentResponse findAlreadyApproved(Long userId, PaymentConfirmRequest request) {
+    return paymentRepository.findByMerchantOrderIdAndUserId(request.getMerchantOrderId(), userId)
+        .filter(payment -> payment.getStatus() == PaymentStatus.APPROVED
+            && Objects.equals(payment.getPaymentKey(), request.getPaymentKey())
+            && payment.getAmount().compareTo(request.getAmount()) == 0)
+        .map(PaymentResponse::of)
+        .orElse(null);
   }
 
   private ConfirmContext prepareConfirm(Long userId, PaymentConfirmRequest request) {
