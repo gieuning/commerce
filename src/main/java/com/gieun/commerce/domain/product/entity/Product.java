@@ -68,6 +68,16 @@ public class Product extends BaseEntity {
     return !optionGroups.isEmpty() || !optionCombinations.isEmpty();
   }
 
+  public boolean isSoldOut() {
+    if (status == ProductStatus.OUT_OF_STOCK) {
+      return true;
+    }
+    if (hasOptions()) {
+      return optionCombinations.stream().noneMatch(combination -> combination.getStock() > 0);
+    }
+    return stock <= 0;
+  }
+
   public void addOptionGroup(OptionGroup optionGroup) {
     optionGroups.add(optionGroup);
     optionGroup.assignProduct(this);

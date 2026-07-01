@@ -14,16 +14,21 @@ import com.gieun.commerce.domain.product.entity.OptionCombination;
 import com.gieun.commerce.domain.product.entity.OptionGroup;
 import com.gieun.commerce.domain.product.entity.OptionValue;
 import com.gieun.commerce.domain.product.entity.Product;
+import com.gieun.commerce.domain.product.entity.ProductStatus;
 import com.gieun.commerce.domain.product.repository.OptionCombinationRepository;
 import com.gieun.commerce.domain.product.repository.OptionGroupRepository;
 import com.gieun.commerce.domain.product.repository.ProductRepository;
+import com.gieun.commerce.domain.product.repository.ProductStockSum;
 import com.gieun.commerce.global.exception.DomainException;
 import com.gieun.commerce.global.exception.DomainExceptionCode;
 import com.gieun.commerce.global.response.PageResult;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -137,8 +142,30 @@ public class ProductService {
 
 
   public PageResult<ProductResponse> getList(String keyword, Pageable pageable) {
-    return new PageResult<>(
-        productRepository.search(keyword, pageable).map(ProductResponse::from));
+    Page<Product> products = productRepository.search(keyword, pageable);
+    Map<Long, Long> optionStockByProductId = loadOptionStock(products.getContent());
+    return new PageResult<>(products.map(
+        product -> ProductResponse.from(product, isSoldOut(product, optionStockByProductId))));
+  }
+
+  private Map<Long, Long> loadOptionStock(List<Product> products) {
+    List<Long> productIds = products.stream().map(Product::getId).toList();
+    if (productIds.isEmpty()) {
+      return Map.of();
+    }
+    return optionCombinationRepository.sumStockByProductIdIn(productIds).stream()
+        .collect(Collectors.toMap(ProductStockSum::getProductId, ProductStockSum::getTotalStock));
+  }
+
+  private boolean isSoldOut(Product product, Map<Long, Long> optionStockByProductId) {
+    if (product.getStatus() == ProductStatus.OUT_OF_STOCK) {
+      return true;
+    }
+    Long optionStock = optionStockByProductId.get(product.getId());
+    if (optionStock != null) {
+      return optionStock <= 0;
+    }
+    return product.getStock() <= 0;
   }
 
   public ProductDetailResponse getDetail(Long id) {

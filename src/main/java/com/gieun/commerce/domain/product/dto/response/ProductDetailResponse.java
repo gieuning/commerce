@@ -25,6 +25,7 @@ public class ProductDetailResponse {
   BigDecimal price;
   int stock;
   ProductStatus status;
+  boolean soldOut;
   String imageUrl;
   LocalDateTime createdAt;
   boolean hasOptions;
@@ -39,6 +40,7 @@ public class ProductDetailResponse {
         .price(product.getPrice())
         .stock(product.getStock())
         .status(product.getStatus())
+        .soldOut(product.isSoldOut())
         .imageUrl(product.getImageUrl())
         .createdAt(product.getCreatedAt())
         .hasOptions(product.hasOptions())

@@ -13,6 +13,7 @@ export interface ProductSummary {
   price: string;
   stock: number;
   status: ProductStatus;
+  soldOut: boolean;
   imageUrl: string | null;
   createdAt: string;
 }
