@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -42,30 +43,30 @@ public class CartService {
   private final OptionCombinationRepository optionCombinationRepository;
   private final TransactionTemplate transactionTemplate;
 
-  public CartResponse getCart(Long userId) {
-    return cartRepository.findByUserId(userId)
+  public CartResponse getCart(CartOwner owner) {
+    return findCartByOwner(owner)
         .map(this::toResponse)
         .orElseGet(CartResponse::empty);
   }
 
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
-  public CartResponse addItem(Long userId, CartItemAddRequest request) {
+  public CartResponse addItem(CartOwner owner, CartItemAddRequest request) {
     try {
-      return executeAddItem(userId, request);
+      return executeAddItem(owner, request);
     } catch (DataIntegrityViolationException e) {
-      return executeAddItem(userId, request);
+      return executeAddItem(owner, request);
     }
   }
 
-  private CartResponse executeAddItem(Long userId, CartItemAddRequest request) {
+  private CartResponse executeAddItem(CartOwner owner, CartItemAddRequest request) {
     return Objects.requireNonNull(
-        transactionTemplate.execute(status -> addItemOnce(userId, request))
+        transactionTemplate.execute(status -> addItemOnce(owner, request))
     );
   }
 
-  private CartResponse addItemOnce(Long userId, CartItemAddRequest request) {
-    Cart cart = cartRepository.findByUserId(userId)
-        .orElseGet(() -> Cart.forUser(userId));
+  private CartResponse addItemOnce(CartOwner owner, CartItemAddRequest request) {
+    Cart cart = findCartByOwner(owner)
+        .orElseGet(() -> createCartFor(owner));
 
     Product product = productRepository.findById(request.getProductId())
         .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_PRODUCT));
@@ -90,20 +91,20 @@ public class CartService {
   }
 
   @Transactional
-  public void removeItem(Long userId, Long cartItemId) {
-    Cart cart = findCart(userId);
+  public void removeItem(CartOwner owner, Long cartItemId) {
+    Cart cart = findCart(owner);
     cart.removeItem(cartItemId);
   }
 
   @Transactional
-  public void clearCart(Long userId) {
-    cartRepository.findByUserId(userId)
+  public void clearCart(CartOwner owner) {
+    findCartByOwner(owner)
         .ifPresent(Cart::clear);
   }
 
   @Transactional
-  public CartResponse changeQuantity(Long userId, Long cartItemId, CartItemUpdateRequest request) {
-    Cart cart = findCart(userId);
+  public CartResponse changeQuantity(CartOwner owner, Long cartItemId, CartItemUpdateRequest request) {
+    Cart cart = findCart(owner);
 
     CartItem item = cart.getItem(cartItemId);
     validateQuantityChange(item, request.getQuantity());
@@ -114,8 +115,8 @@ public class CartService {
   }
 
   @Transactional
-  public CartResponse changeOption(Long userId, Long cartItemId, CartItemOptionUpdateRequest request) {
-    Cart cart = findCart(userId);
+  public CartResponse changeOption(CartOwner owner, Long cartItemId, CartItemOptionUpdateRequest request) {
+    Cart cart = findCart(owner);
 
     CartItem item = cart.getItem(cartItemId);
     Product product = productRepository.findById(item.getProductId())
@@ -137,9 +138,21 @@ public class CartService {
   }
 
 
-  private Cart findCart(Long userId) {
-    return cartRepository.findByUserId(userId)
+  private Cart findCart(CartOwner owner) {
+    return findCartByOwner(owner)
         .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_CART));
+  }
+
+  private Optional<Cart> findCartByOwner(CartOwner owner) {
+    return owner.isGuest()
+        ? cartRepository.findByGuestToken(owner.getGuestToken())
+        : cartRepository.findByUserId(owner.getUserId());
+  }
+
+  private Cart createCartFor(CartOwner owner) {
+    return owner.isGuest()
+        ? Cart.forGuest(owner.getGuestToken())
+        : Cart.forUser(owner.getUserId());
   }
 
   private void validateQuantityChange(CartItem item, int quantity) {
