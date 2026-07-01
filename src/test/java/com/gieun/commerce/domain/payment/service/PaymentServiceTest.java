@@ -611,6 +611,33 @@ class PaymentServiceTest {
     assertThat(fixture.payment().getStatus()).isEqualTo(PaymentStatus.FAILED);
   }
 
+  @Test
+  void confirmReturnsExistingResultWhenAlreadyApprovedWithSameKey() {
+    Long userId = 1L;
+    String merchantOrderId = "20260628000010ABCDEF123456";
+    String paymentKey = "pay_test_key";
+    BigDecimal amount = new BigDecimal("30000.00");
+    Payment payment = Payment.request(
+        10L, userId, merchantOrderId, PgProvider.TOSS, PaymentMethod.CARD, amount);
+    ReflectionTestUtils.setField(payment, "id", 100L);
+    payment.approve(paymentKey, LocalDateTime.now()); // 이미 승인됨
+    PaymentConfirmRequest request = PaymentConfirmRequest.builder()
+        .merchantOrderId(merchantOrderId)
+        .paymentKey(paymentKey)
+        .amount(amount)
+        .build();
+
+    when(paymentRepository.findByMerchantOrderIdAndUserId(merchantOrderId, userId))
+        .thenReturn(Optional.of(payment));
+
+    PaymentResponse response = paymentService.confirm(userId, request);
+
+    // 멱등: 기존 승인 결과를 그대로 반환하고 PG를 재호출하지 않음
+    assertThat(response.getStatus()).isEqualTo(PaymentStatus.APPROVED);
+    assertThat(response.getPaymentId()).isEqualTo(100L);
+    verify(paymentGateway, never()).confirm(any());
+  }
+
   private ConfirmFixture setUpConfirmFixture() {
     Long userId = 1L;
     Long orderId = 10L;
