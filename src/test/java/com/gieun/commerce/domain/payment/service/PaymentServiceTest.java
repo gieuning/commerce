@@ -30,6 +30,7 @@ import com.gieun.commerce.domain.payment.entity.PaymentReceipt;
 import com.gieun.commerce.domain.payment.entity.PaymentStatus;
 import com.gieun.commerce.domain.payment.entity.PgProvider;
 import com.gieun.commerce.domain.payment.gateway.PaymentCancelCommand;
+import com.gieun.commerce.domain.payment.gateway.PaymentCancelResult;
 import com.gieun.commerce.domain.payment.gateway.PaymentConfirmResult;
 import com.gieun.commerce.domain.payment.gateway.PaymentGateway;
 import com.gieun.commerce.domain.payment.gateway.PaymentGatewayException;
@@ -555,6 +556,75 @@ class PaymentServiceTest {
   }
 
   
+
+  @Test
+  void cancelIsIdempotentWhenAlreadyCancelled() {
+    Long userId = 1L;
+    Long paymentId = 100L;
+    BigDecimal amount = new BigDecimal("30000.00");
+    Payment payment = Payment.request(
+        10L, userId, "20260628000010ABCDEF123456", PgProvider.TOSS, PaymentMethod.CARD, amount);
+    ReflectionTestUtils.setField(payment, "id", paymentId);
+    payment.approve("pay_test_key", LocalDateTime.now());
+    payment.cancel(LocalDateTime.now()); // 이미 취소됨
+    PaymentCancelRequest request = PaymentCancelRequest.builder()
+        .cancelAmount(amount)
+        .cancelReason("단순 변심")
+        .build();
+
+    when(paymentRepository.findByIdAndUserId(paymentId, userId)).thenReturn(Optional.of(payment));
+
+    PaymentResponse response = paymentService.cancel(userId, paymentId, request);
+
+    // 기존 취소 결과 반환, PG 재호출 없음
+    assertThat(response.getStatus()).isEqualTo(PaymentStatus.CANCELLED);
+    verify(paymentGateway, never()).cancel(any());
+  }
+
+  @Test
+  void cancelRestoresStockAndCancelsOrderOnSuccess() {
+    Long userId = 1L;
+    Long orderId = 10L;
+    Long paymentId = 100L;
+    BigDecimal amount = new BigDecimal("30000.00");
+    Order order = Order.builder()
+        .id(orderId)
+        .userId(userId)
+        .status(OrderStatus.PAID)
+        .totalProductPrice(amount)
+        .discountAmount(BigDecimal.ZERO)
+        .shippingFee(BigDecimal.ZERO)
+        .totalPrice(amount)
+        .orderedAt(LocalDateTime.now())
+        .build();
+    Payment payment = Payment.request(
+        orderId, userId, "20260628000010ABCDEF123456", PgProvider.TOSS, PaymentMethod.CARD, amount);
+    ReflectionTestUtils.setField(payment, "id", paymentId);
+    payment.approve("pay_test_key", LocalDateTime.now());
+    PaymentCancelRequest request = PaymentCancelRequest.builder()
+        .cancelAmount(amount)
+        .cancelReason("단순 변심")
+        .build();
+
+    when(paymentRepository.findByIdAndUserId(paymentId, userId)).thenReturn(Optional.of(payment));
+    when(orderRepository.findByIdAndUserIdForUpdate(orderId, userId)).thenReturn(Optional.of(order));
+    when(paymentRepository.findByIdAndUserIdForUpdate(paymentId, userId)).thenReturn(Optional.of(payment));
+    when(paymentGateway.cancel(any())).thenReturn(PaymentCancelResult.builder()
+        .paymentKey("pay_test_key")
+        .pgStatus("CANCELED")
+        .pgCancellationKey("cancel_key")
+        .cancelAmount(amount)
+        .cancelledAt(OffsetDateTime.now())
+        .build());
+
+    paymentService.cancel(userId, paymentId, request);
+
+    // 결제 취소 + 주문 취소 + 재고 복구 + 취소 이력 저장
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CANCELLED);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    verify(orderStockService).restore(order);
+    verify(paymentCancellationRepository).save(any(PaymentCancellation.class));
+  }
 
   @Test
   void confirmCompensatesAndRecordsDoneWhenStockRunsOut() {
