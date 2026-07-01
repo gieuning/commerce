@@ -38,4 +38,11 @@ class PaymentControllerAuthorizationTest {
     mockMvc.perform(get("/payments/1"))
         .andExpect(status().isForbidden());
   }
+
+  @Test
+  void anonymousIsUnauthorized() throws Exception {
+    // 미인증은 500이 아니라 401 (AuthenticationEntryPoint)
+    mockMvc.perform(get("/payments/1"))
+        .andExpect(status().isUnauthorized());
+  }
 }
