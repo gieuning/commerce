@@ -25,6 +25,7 @@ export const MESSAGES = {
     EMPTY: "등록된 상품이 없습니다.",
     END_OF_LIST: "모든 상품을 확인했습니다.",
     IMAGE_PLACEHOLDER: "이미지 없음",
+    SOLD_OUT: "SOLD OUT",
     LOADING_MORE: "상품을 더 불러오는 중입니다.",
     SELECT_OPTION: "상품 옵션을 선택해 주세요.",
     ADDED_TO_CART: "장바구니에 담았습니다.",
