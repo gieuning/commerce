@@ -25,6 +25,14 @@ public interface OptionCombinationRepository extends JpaRepository<OptionCombina
   boolean existsByProductId(Long productId);
   Optional<OptionCombination> findByIdAndProductId(Long id, Long productId);
 
+  @Query("""
+      select c.product.id as productId, sum(c.stock) as totalStock
+      from OptionCombination c
+      where c.product.id in :productIds
+      group by c.product.id
+      """)
+  List<ProductStockSum> sumStockByProductIdIn(@Param("productIds") Collection<Long> productIds);
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("""
       select c

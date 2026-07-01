@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import { PriceText } from "@/components/PriceText";
 import { StatusBadge } from "@/components/StatusBadge";
-import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
 import { PRODUCT_STATUS_LABELS, PRODUCT_STATUS_TONES } from "@/constants/statusLabels";
+import { ProductImage } from "@/features/products/components/ProductImage";
 import type { ProductSummary } from "@/types/product";
 
 interface ProductCardProps {
@@ -15,19 +15,7 @@ export const ProductCard = ({ product }: ProductCardProps) => (
     className="group overflow-hidden rounded-card border border-line bg-surface transition hover:border-primary"
     to={ROUTES.PRODUCT_DETAIL(product.id)}
   >
-    <div className="aspect-[4/3] bg-line">
-      {product.imageUrl ? (
-        <img
-          alt={product.name}
-          className="h-full w-full object-cover"
-          src={product.imageUrl}
-        />
-      ) : (
-        <div className="flex h-full items-center justify-center text-sm text-neutral">
-          {MESSAGES.PRODUCT.IMAGE_PLACEHOLDER}
-        </div>
-      )}
-    </div>
+    <ProductImage imageUrl={product.imageUrl} name={product.name} soldOut={product.soldOut} />
     <div className="grid gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <h2 className="line-clamp-2 text-base font-semibold text-ink group-hover:text-primary">

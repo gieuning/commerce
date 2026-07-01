@@ -24,10 +24,11 @@ public class ProductResponse {
   BigDecimal price;
   int stock;
   ProductStatus status;
+  boolean soldOut;
   String imageUrl;
   LocalDateTime createdAt;
 
-  public static ProductResponse from(Product product) {
+  public static ProductResponse from(Product product, boolean soldOut) {
     return ProductResponse.builder()
         .id(product.getId())
         .name(product.getName())
@@ -35,6 +36,7 @@ public class ProductResponse {
         .price(product.getPrice())
         .stock(product.getStock())
         .status(product.getStatus())
+        .soldOut(soldOut)
         .imageUrl(product.getImageUrl())
         .createdAt(product.getCreatedAt())
         .build();
