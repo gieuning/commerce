@@ -32,6 +32,7 @@ import com.gieun.commerce.domain.payment.gateway.PaymentConfirmResult;
 import com.gieun.commerce.domain.payment.gateway.PaymentGateway;
 import com.gieun.commerce.domain.payment.gateway.PaymentGatewayException;
 import com.gieun.commerce.domain.payment.repository.PaymentCancellationRepository;
+import com.gieun.commerce.domain.payment.repository.PaymentCompensationRepository;
 import com.gieun.commerce.domain.payment.repository.PaymentEventRepository;
 import com.gieun.commerce.domain.payment.repository.PaymentReceiptRepository;
 import com.gieun.commerce.domain.payment.repository.PaymentRepository;
@@ -65,6 +66,9 @@ class PaymentServiceTest {
 
   @Mock
   PaymentCancellationRepository paymentCancellationRepository;
+
+  @Mock
+  PaymentCompensationRepository paymentCompensationRepository;
 
   @Mock
   PaymentReceiptRepository paymentReceiptRepository;

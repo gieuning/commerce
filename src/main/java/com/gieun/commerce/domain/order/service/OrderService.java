@@ -97,7 +97,7 @@ public class OrderService {
   private OrderItem createOrderItem(Product product, OrderItemRequest request) {
     if (request.getOptionCombinationId() == null) {
       validateSingleProduct(product, request.getQuantity());
-      product.decreaseStock(request.getQuantity());
+      // 재고 차감은 결제 승인 시점(PaymentService)으로 이동. 여기선 가용성 검증만.
 
       return OrderItem.create(
           product.getId(),
@@ -114,7 +114,7 @@ public class OrderService {
         .orElseThrow(() -> new DomainException(DomainExceptionCode.NOT_FOUND_OPTION_COMBINATION));
 
     validateOptionProduct(product, combination, request.getQuantity());
-    combination.decreaseStock(request.getQuantity());
+    // 재고 차감은 결제 승인 시점(PaymentService)으로 이동. 여기선 가용성 검증만.
 
     return OrderItem.create(
         product.getId(),

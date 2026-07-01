@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ public class TossPaymentGateway implements PaymentGateway {
 
   private static final String CONFIRM_PATH = "/v1/payments/confirm";
   private static final String CANCEL_PATH = "/v1/payments/{paymentKey}/cancel";
+  private static final String PAYMENT_PATH = "/v1/payments/{paymentKey}";
   private static final String FIELD_PAYMENT_KEY = "paymentKey";
   private static final String FIELD_ORDER_ID = "orderId";
   private static final String FIELD_AMOUNT = "amount";
@@ -44,6 +46,11 @@ public class TossPaymentGateway implements PaymentGateway {
   private static final String FIELD_CODE = "code";
   private static final String FIELD_MESSAGE = "message";
   private static final String FIELD_CANCELS = "cancels";
+  // Toss: 이미 취소/환불된 결제를 다시 취소할 때 내려오는 에러코드. 우리가 원하던 종료 상태이므로 멱등 성공으로 간주한다.
+  private static final Set<String> IDEMPOTENT_CANCEL_CODES = Set.of(
+      "ALREADY_CANCELED_PAYMENT",
+      "ALREADY_REFUND_PAYMENT"
+  );
 
   private final RestClient restClient;
   private final ObjectMapper objectMapper;
@@ -102,13 +109,40 @@ public class TossPaymentGateway implements PaymentGateway {
     }
 
     String requestPayload = writeJson(request);
-    String responsePayload = post(
-        CANCEL_PATH,
-        request,
-        DomainExceptionCode.PAYMENT_CANCEL_FAILED,
-        command.getPaymentKey()
-    );
+
+    String responsePayload;
+    try {
+      responsePayload = post(
+          CANCEL_PATH,
+          request,
+          DomainExceptionCode.PAYMENT_CANCEL_FAILED,
+          command.getPaymentKey()
+      );
+    } catch (PaymentGatewayException exception) {
+      if (isIdempotentlyCanceled(exception.getPgCode())) {
+        // 멱등: 이미 취소/환불된 결제는 원하던 종료 상태이므로, 결제 단건을 재조회해 실제 취소 상세를 채운다.
+        return fetchCanceledResult(command.getPaymentKey(), requestPayload);
+      }
+      throw exception;
+    }
+
     JsonNode response = readJson(responsePayload, DomainExceptionCode.PAYMENT_CANCEL_FAILED);
+    return toCancelResult(response, requestPayload, responsePayload);
+  }
+
+  private boolean isIdempotentlyCanceled(String pgCode) {
+    return pgCode != null && IDEMPOTENT_CANCEL_CODES.contains(pgCode);
+  }
+
+  // 이미 취소/환불된 결제: GET /v1/payments/{paymentKey}로 재조회해 정확한 취소 상세(취소키/금액/시각)를 채운다.
+  private PaymentCancelResult fetchCanceledResult(String paymentKey, String requestPayload) {
+    String responsePayload = get(PAYMENT_PATH, DomainExceptionCode.PAYMENT_CANCEL_FAILED, paymentKey);
+    JsonNode response = readJson(responsePayload, DomainExceptionCode.PAYMENT_CANCEL_FAILED);
+    return toCancelResult(response, requestPayload, responsePayload);
+  }
+
+  // 결제 단건(JSON)에서 최신 취소 정보를 추출해 취소 결과로 변환한다. (cancel 응답/단건 재조회 응답 공용)
+  private PaymentCancelResult toCancelResult(JsonNode response, String requestPayload, String responsePayload) {
     JsonNode cancel = latestCancel(response);
 
     return PaymentCancelResult.builder()
@@ -120,6 +154,23 @@ public class TossPaymentGateway implements PaymentGateway {
         .requestPayload(requestPayload)
         .responsePayload(responsePayload)
         .build();
+  }
+
+  private String get(String path, DomainExceptionCode exceptionCode, Object... uriVariables) {
+    try {
+      String responsePayload = restClient.get()
+          .uri(path, uriVariables)
+          .retrieve()
+          .body(String.class);
+      if (isBlank(responsePayload)) {
+        throw emptyPayloadException(exceptionCode, responsePayload);
+      }
+      return responsePayload;
+    } catch (RestClientResponseException exception) {
+      throw gatewayException(exceptionCode, exception.getResponseBodyAsString());
+    } catch (RestClientException exception) {
+      throw new PaymentGatewayException(exceptionCode, null, exception.getMessage(), null);
+    }
   }
 
   private String post(String path, Object request, DomainExceptionCode exceptionCode, Object... uriVariables) {
