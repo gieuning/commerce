@@ -64,7 +64,7 @@ public class UserService {
 
     CustomUserDetails principal = (CustomUserDetails) authentication.getPrincipal();
     String token = jwtTokenProvider.createToken(principal.getUserId(), principal.getRole());
-    return TokenResponse.of(token);
+    return TokenResponse.of(token, principal.getUserId());
   }
 
   public UserResponse getMyInfo(Long userId) {

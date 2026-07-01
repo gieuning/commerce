@@ -90,6 +90,31 @@ public class CartService {
     return toResponse(savedCart);
   }
 
+  // 로그인/가입 시 게스트 카트를 회원 카트로 병합한다. (best-effort로 호출됨 — 실패해도 인증은 성공)
+  @Transactional
+  public void merge(Long userId, String guestToken) {
+    if (guestToken == null || guestToken.isBlank()) {
+      return;
+    }
+    Cart guestCart = cartRepository.findByGuestToken(guestToken).orElse(null);
+    if (guestCart == null) {
+      return;
+    }
+
+    Cart userCart = cartRepository.findByUserId(userId).orElse(null);
+    if (userCart == null) {
+      // 회원 카트가 없으면 게스트 카트의 주인만 바꾼다.
+      guestCart.assignToUser(userId);
+      return;
+    }
+
+    // 회원 카트가 있으면 게스트 아이템을 옮긴다. 같은 상품+옵션은 수량 합산(Cart.addItem).
+    for (CartItem item : guestCart.getItems()) {
+      userCart.addItem(item.getProductId(), item.getOptionCombinationId(), item.getQuantity());
+    }
+    cartRepository.delete(guestCart);
+  }
+
   @Transactional
   public void removeItem(CartOwner owner, Long cartItemId) {
     Cart cart = findCart(owner);
