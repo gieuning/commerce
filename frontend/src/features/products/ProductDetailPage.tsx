@@ -16,6 +16,7 @@ import { cartService } from "@/services/cartService";
 import { productService } from "@/services/productService";
 import { PRODUCT_STATUS, type ProductDetail } from "@/types/product";
 import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
+import { ProductImage } from "@/features/products/components/ProductImage";
 import { ProductOptionPicker } from "@/features/products/components/ProductOptionPicker";
 
 const parseProductId = (productId: string | undefined): number | null => {
@@ -129,13 +130,7 @@ export const ProductDetailPage = () => {
       <PageHeader title={product.name} description={product.description ?? undefined} />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="overflow-hidden rounded-card border border-line bg-surface">
-          {product.imageUrl ? (
-            <img alt={product.name} className="aspect-[4/3] w-full object-cover" src={product.imageUrl} />
-          ) : (
-            <div className="grid aspect-[4/3] place-items-center bg-line text-ink-soft">
-              {MESSAGES.PRODUCT.IMAGE_PLACEHOLDER}
-            </div>
-          )}
+          <ProductImage imageUrl={product.imageUrl} name={product.name} soldOut={product.soldOut} />
         </div>
         <form className="grid h-fit gap-5 rounded-card border border-line bg-surface p-5" onSubmit={handleAddCart}>
           <div className="flex items-center justify-between gap-3">
