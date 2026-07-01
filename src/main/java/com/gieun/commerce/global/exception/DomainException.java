@@ -11,10 +11,12 @@ public class DomainException extends RuntimeException {
 
   HttpStatus httpStatus;
   String code;
+  DomainExceptionCode exceptionCode;
 
   public DomainException(DomainExceptionCode exceptionCode) {
     super(exceptionCode.getMessage());
     this.httpStatus = exceptionCode.getStatus();
     this.code = exceptionCode.name();
+    this.exceptionCode = exceptionCode;
   }
 }
