@@ -50,6 +50,8 @@ public class SecurityConfig {
                 "/v3/api-docs/**"
             ).permitAll()
             .requestMatchers(HttpMethod.GET, "/products", "/products/**").permitAll()
+            // 장바구니는 게스트 담기 허용(X-Guest-Token). 회원은 JWT로 식별, 결제는 여전히 인증 필요.
+            .requestMatchers("/cart", "/cart/**").permitAll()
             .anyRequest().authenticated()
         )
         .exceptionHandling(handler -> handler
