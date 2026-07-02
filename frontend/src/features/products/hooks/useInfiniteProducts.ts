@@ -51,6 +51,8 @@ export const useInfiniteProducts = (keyword: string) => {
             ...currentState,
             errorMessage: null,
             hasNextPage: true,
+            isInitialLoading: true,
+            isLoadingMore: false,
             pageNumber: 0,
             products: [],
             searchRequestId: currentState.searchRequestId + 1,
