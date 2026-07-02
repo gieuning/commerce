@@ -31,7 +31,7 @@ const mergeUniqueProducts = (
   return [...productMap.values()];
 };
 
-export const useInfiniteProducts = () => {
+export const useInfiniteProducts = (keyword: string) => {
   const [productState, setProductState] = useState<InfiniteProductsState>({
     errorMessage: null,
     hasNextPage: true,
@@ -40,8 +40,26 @@ export const useInfiniteProducts = () => {
     pageNumber: 0,
     products: [],
     searchRequestId: 0,
-    submittedKeyword: "",
+    submittedKeyword: keyword,
   });
+
+  useEffect(() => {
+    setProductState((currentState) =>
+      currentState.submittedKeyword === keyword
+        ? currentState
+        : {
+            ...currentState,
+            errorMessage: null,
+            hasNextPage: true,
+            isInitialLoading: true,
+            isLoadingMore: false,
+            pageNumber: 0,
+            products: [],
+            searchRequestId: currentState.searchRequestId + 1,
+            submittedKeyword: keyword,
+          },
+    );
+  }, [keyword]);
 
   useEffect(() => {
     let isMounted = true;
@@ -95,18 +113,6 @@ export const useInfiniteProducts = () => {
     };
   }, [productState.pageNumber, productState.searchRequestId, productState.submittedKeyword]);
 
-  const searchProducts = useCallback((keyword: string) => {
-    setProductState((currentState) => ({
-      ...currentState,
-      errorMessage: null,
-      hasNextPage: true,
-      pageNumber: 0,
-      products: [],
-      searchRequestId: currentState.searchRequestId + 1,
-      submittedKeyword: keyword.trim(),
-    }));
-  }, []);
-
   const loadNextPage = useCallback(() => {
     setProductState((currentState) => {
       if (
@@ -134,6 +140,5 @@ export const useInfiniteProducts = () => {
     ...productState,
     loadNextPage,
     retryProductsRequest,
-    searchProducts,
   };
 };
