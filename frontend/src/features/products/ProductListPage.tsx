@@ -1,9 +1,7 @@
-import { Search } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
-import { Button } from "@/components/Button";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
-import { Input } from "@/components/Input";
 import { LoadingState } from "@/components/LoadingState";
 import { PageHeader } from "@/components/PageHeader";
 import { MESSAGES } from "@/constants/messages";
@@ -11,7 +9,8 @@ import { ProductCard } from "@/features/products/components/ProductCard";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 
 export const ProductListPage = () => {
-  const [keyword, setKeyword] = useState("");
+  const [searchParams] = useSearchParams();
+  const keyword = (searchParams.get("keyword") ?? "").trim();
   const [loadMoreElement, setLoadMoreElement] = useState<HTMLDivElement | null>(null);
   const {
     errorMessage,
@@ -21,8 +20,7 @@ export const ProductListPage = () => {
     loadNextPage,
     products,
     retryProductsRequest,
-    searchProducts,
-  } = useInfiniteProducts();
+  } = useInfiniteProducts(keyword);
   const hasProducts = products.length > 0;
   const shouldShowInitialError = !isInitialLoading && !hasProducts && errorMessage;
 
@@ -45,31 +43,12 @@ export const ProductListPage = () => {
     return () => observer.disconnect();
   }, [loadMoreElement, loadNextPage]);
 
-  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    searchProducts(keyword);
-  };
-
   return (
     <section className="grid gap-6">
       <PageHeader
-        description="상품을 둘러보고 장바구니에 담아 주문을 생성할 수 있습니다."
+        description={keyword ? MESSAGES.PRODUCT.SEARCH_RESULT(keyword) : MESSAGES.PRODUCT.LIST_DESCRIPTION}
         title="상품"
       />
-      <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleSearch}>
-        <div className="flex-1">
-          <Input
-            label="상품 검색"
-            name="keyword"
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder="상품명을 입력하세요"
-            value={keyword}
-          />
-        </div>
-        <Button icon={<Search size={16} />} type="submit">
-          검색
-        </Button>
-      </form>
       {isInitialLoading ? <LoadingState /> : null}
       {shouldShowInitialError ? <ErrorState message={errorMessage} onRetry={retryProductsRequest} /> : null}
       {!isInitialLoading && !errorMessage && !hasProducts ? (
