@@ -19,6 +19,7 @@ import com.gieun.commerce.domain.product.repository.OptionCombinationRepository;
 import com.gieun.commerce.domain.product.repository.OptionGroupRepository;
 import com.gieun.commerce.domain.product.repository.ProductRepository;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -135,6 +136,30 @@ class CartServiceTest {
     cartService.merge(5L, null);
 
     verify(cartRepository, never()).findByGuestToken(any());
+  }
+
+  @Test
+  void deleteAbandonedGuestCartsBulkDeletesStaleCartsAndReturnsCount() {
+    LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
+    List<Long> staleIds = List.of(1L, 2L);
+    when(cartRepository.findAbandonedGuestCartIds(any(), any())).thenReturn(staleIds);
+
+    int deleted = cartService.deleteAbandonedGuestCarts(cutoff, 500);
+
+    assertThat(deleted).isEqualTo(2);
+    verify(cartRepository).deleteItemsByCartIds(staleIds);
+    verify(cartRepository).deleteByIds(staleIds);
+  }
+
+  @Test
+  void deleteAbandonedGuestCartsIsNoOpWhenNothingStale() {
+    when(cartRepository.findAbandonedGuestCartIds(any(), any())).thenReturn(List.of());
+
+    int deleted = cartService.deleteAbandonedGuestCarts(LocalDateTime.now().minusDays(30), 500);
+
+    assertThat(deleted).isZero();
+    verify(cartRepository, never()).deleteItemsByCartIds(any());
+    verify(cartRepository, never()).deleteByIds(any());
   }
 
   private Product product(Long id, int stock) {
