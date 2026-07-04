@@ -18,6 +18,7 @@ import com.gieun.commerce.domain.product.repository.ProductRepository;
 import com.gieun.commerce.global.exception.DomainException;
 import com.gieun.commerce.global.exception.DomainExceptionCode;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -162,6 +164,19 @@ public class CartService {
     return toResponse(cart);
   }
 
+  @Transactional
+  public int deleteAbandonedGuestCarts(LocalDateTime cutoff, int batchSize) {
+    List<Long> staleCartIds = cartRepository.findAbandonedGuestCartIds(
+        cutoff, PageRequest.of(0, batchSize));
+
+    if (staleCartIds.isEmpty()) {
+      return 0;
+    }
+
+    cartRepository.deleteItemsByCartIds(staleCartIds);
+    cartRepository.deleteByIds(staleCartIds);
+    return staleCartIds.size();
+  }
 
   private Cart findCart(CartOwner owner) {
     return findCartByOwner(owner)
