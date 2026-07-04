@@ -139,18 +139,27 @@ class CartServiceTest {
   }
 
   @Test
-  void deleteAbandonedGuestCartsRemovesStaleCartsAndReturnsCount() {
+  void deleteAbandonedGuestCartsBulkDeletesStaleCartsAndReturnsCount() {
     LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
-    Cart stale1 = Cart.forGuest("g1");
-    Cart stale2 = Cart.forGuest("g2");
-    List<Cart> staleCarts = List.of(stale1, stale2);
-    when(cartRepository.findByGuestTokenIsNotNullAndCreatedAtBefore(any(), any()))
-        .thenReturn(staleCarts);
+    List<Long> staleIds = List.of(1L, 2L);
+    when(cartRepository.findAbandonedGuestCartIds(any(), any())).thenReturn(staleIds);
 
     int deleted = cartService.deleteAbandonedGuestCarts(cutoff, 500);
 
     assertThat(deleted).isEqualTo(2);
-    verify(cartRepository).deleteAll(staleCarts);
+    verify(cartRepository).deleteItemsByCartIds(staleIds);
+    verify(cartRepository).deleteByIds(staleIds);
+  }
+
+  @Test
+  void deleteAbandonedGuestCartsIsNoOpWhenNothingStale() {
+    when(cartRepository.findAbandonedGuestCartIds(any(), any())).thenReturn(List.of());
+
+    int deleted = cartService.deleteAbandonedGuestCarts(LocalDateTime.now().minusDays(30), 500);
+
+    assertThat(deleted).isZero();
+    verify(cartRepository, never()).deleteItemsByCartIds(any());
+    verify(cartRepository, never()).deleteByIds(any());
   }
 
   private Product product(Long id, int stock) {

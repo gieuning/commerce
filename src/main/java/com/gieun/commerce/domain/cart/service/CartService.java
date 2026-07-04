@@ -164,15 +164,18 @@ public class CartService {
     return toResponse(cart);
   }
 
-  // 생성 후 cutoff 이전의 게스트 카트를 batchSize 만큼 삭제하고, 삭제 건수를 반환한다.
-  // (cart_items는 Cart의 cascade=ALL + orphanRemoval로 함께 삭제)
   @Transactional
   public int deleteAbandonedGuestCarts(LocalDateTime cutoff, int batchSize) {
-    List<Cart> staleCarts = cartRepository.findByGuestTokenIsNotNullAndCreatedAtBefore(
+    List<Long> staleCartIds = cartRepository.findAbandonedGuestCartIds(
         cutoff, PageRequest.of(0, batchSize));
 
-    cartRepository.deleteAll(staleCarts);
-    return staleCarts.size();
+    if (staleCartIds.isEmpty()) {
+      return 0;
+    }
+
+    cartRepository.deleteItemsByCartIds(staleCartIds);
+    cartRepository.deleteByIds(staleCartIds);
+    return staleCartIds.size();
   }
 
   private Cart findCart(CartOwner owner) {
