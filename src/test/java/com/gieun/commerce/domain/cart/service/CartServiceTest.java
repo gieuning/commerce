@@ -19,6 +19,7 @@ import com.gieun.commerce.domain.product.repository.OptionCombinationRepository;
 import com.gieun.commerce.domain.product.repository.OptionGroupRepository;
 import com.gieun.commerce.domain.product.repository.ProductRepository;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -135,6 +136,21 @@ class CartServiceTest {
     cartService.merge(5L, null);
 
     verify(cartRepository, never()).findByGuestToken(any());
+  }
+
+  @Test
+  void deleteAbandonedGuestCartsRemovesStaleCartsAndReturnsCount() {
+    LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
+    Cart stale1 = Cart.forGuest("g1");
+    Cart stale2 = Cart.forGuest("g2");
+    List<Cart> staleCarts = List.of(stale1, stale2);
+    when(cartRepository.findByGuestTokenIsNotNullAndCreatedAtBefore(any(), any()))
+        .thenReturn(staleCarts);
+
+    int deleted = cartService.deleteAbandonedGuestCarts(cutoff, 500);
+
+    assertThat(deleted).isEqualTo(2);
+    verify(cartRepository).deleteAll(staleCarts);
   }
 
   private Product product(Long id, int stock) {

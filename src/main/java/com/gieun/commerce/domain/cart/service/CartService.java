@@ -18,6 +18,7 @@ import com.gieun.commerce.domain.product.repository.ProductRepository;
 import com.gieun.commerce.global.exception.DomainException;
 import com.gieun.commerce.global.exception.DomainExceptionCode;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -162,6 +164,16 @@ public class CartService {
     return toResponse(cart);
   }
 
+  // 생성 후 cutoff 이전의 게스트 카트를 batchSize 만큼 삭제하고, 삭제 건수를 반환한다.
+  // (cart_items는 Cart의 cascade=ALL + orphanRemoval로 함께 삭제)
+  @Transactional
+  public int deleteAbandonedGuestCarts(LocalDateTime cutoff, int batchSize) {
+    List<Cart> staleCarts = cartRepository.findByGuestTokenIsNotNullAndCreatedAtBefore(
+        cutoff, PageRequest.of(0, batchSize));
+
+    cartRepository.deleteAll(staleCarts);
+    return staleCarts.size();
+  }
 
   private Cart findCart(CartOwner owner) {
     return findCartByOwner(owner)
