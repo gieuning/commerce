@@ -10,12 +10,16 @@ import com.gieun.commerce.domain.cart.service.CartService;
 import com.gieun.commerce.domain.user.dto.response.UserResponse;
 import com.gieun.commerce.domain.user.service.UserService;
 import com.gieun.commerce.global.response.ApiResponse;
+import com.gieun.commerce.global.security.AuthCookieProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Objects;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -39,6 +43,7 @@ public class UserController {
 
   private final UserService userService;
   private final CartService cartService;
+  private final AuthCookieProvider authCookieProvider;
 
   @Operation(summary = "회원가입", description = "이메일/비밀번호/이름으로 회원을 등록한다.")
   @PostMapping("/signup")
@@ -51,14 +56,26 @@ public class UserController {
     return ApiResponse.ok(response);
   }
 
-  @Operation(summary = "로그인", description = "이메일/비밀번호로 인증하고 Access Token(JWT)을 발급한다.")
+  @Operation(summary = "로그인", description = "인증 후 Access Token(JWT)을 HttpOnly 쿠키로 발급한다.")
   @PostMapping("/login")
-  public ApiResponse<TokenResponse> login(
+  public ApiResponse<Void> login(
       @Valid @RequestBody LoginRequest request,
-      @RequestHeader(value = GUEST_TOKEN_HEADER, required = false) String guestToken) {
+      @RequestHeader(value = GUEST_TOKEN_HEADER, required = false) String guestToken,
+      HttpServletResponse response) {
     TokenResponse token = userService.login(request);
+    // 빈 토큰으로 쿠키를 심으면 "로그인된 듯하나 모든 요청이 익명" 조용한 실패 → 경계에서 즉시 거부
+    String accessToken = Objects.requireNonNull(token.getAccessToken(), "액세스 토큰 생성에 실패했습니다.");
+    // 토큰은 바디가 아니라 HttpOnly 쿠키로만 내려보낸다 (JS 접근 차단)
+    response.addHeader(HttpHeaders.SET_COOKIE, authCookieProvider.create(accessToken).toString());
     mergeGuestCart(token.getUserId(), guestToken);
-    return ApiResponse.ok(token);
+    return ApiResponse.ok();
+  }
+
+  @Operation(summary = "로그아웃", description = "Access Token 쿠키를 만료시켜 삭제한다.")
+  @PostMapping("/logout")
+  public ApiResponse<Void> logout(HttpServletResponse response) {
+    response.addHeader(HttpHeaders.SET_COOKIE, authCookieProvider.clear().toString());
+    return ApiResponse.ok();
   }
 
   // 게스트 카트 병합은 best-effort — 실패해도 로그인/가입은 성공시킨다.
@@ -69,7 +86,8 @@ public class UserController {
     try {
       cartService.merge(userId, guestToken);
     } catch (Exception e) {
-      log.warn("게스트 카트 병합 실패 — userId={}, guestToken={}, error={}", userId, guestToken, e.getMessage());
+      // 예외 객체를 마지막 인자로 넘겨 스택트레이스 보존. guestToken(식별자)은 로그에 남기지 않음.
+      log.warn("게스트 카트 병합 실패 — userId={}", userId, e);
     }
   }
 
