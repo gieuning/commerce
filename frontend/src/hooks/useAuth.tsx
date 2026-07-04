@@ -70,15 +70,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = useCallback(
     async (requestBody: LoginRequest) => {
+      // 요청 헤더의 X-Guest-Token으로 서버가 게스트 카트를 회원 카트에 병합한다.
       const tokenResponse = await authService.login(requestBody);
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokenResponse.accessToken);
+      // 병합 완료 → 게스트 토큰 제거(이후 회원 카트 사용)
+      localStorage.removeItem(STORAGE_KEYS.GUEST_TOKEN);
       await refreshCurrentUser();
     },
     [refreshCurrentUser],
   );
 
   const signup = useCallback(async (requestBody: SignupRequest) => {
+    // 회원가입 시에도 X-Guest-Token으로 게스트 카트가 새 회원 카트에 병합된다.
     await authService.signup(requestBody);
+    localStorage.removeItem(STORAGE_KEYS.GUEST_TOKEN);
   }, []);
 
   const contextValue = useMemo<AuthContextValue>(

@@ -64,4 +64,34 @@ describe("apiClient", () => {
 
     expect(requestHeaders.get("Authorization")).toBe("Bearer access-token-value");
   });
+
+  it("stores the guest token issued in the response header", async () => {
+    const guestResponse = new Response(JSON.stringify({ data: { items: [] } }), {
+      status: 201,
+      headers: { "Content-Type": "application/json", "X-Guest-Token": "guest-token-abc" },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_input: RequestInfo | URL, _init?: RequestInit) => Promise.resolve(guestResponse)),
+    );
+
+    await apiClient.post("/cart/items", { productId: 1, quantity: 1 });
+
+    expect(localStorage.getItem(STORAGE_KEYS.GUEST_TOKEN)).toBe("guest-token-abc");
+  });
+
+  it("attaches guest token header when guest token exists", async () => {
+    localStorage.setItem(STORAGE_KEYS.GUEST_TOKEN, "guest-token-abc");
+    const requestMock = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
+      Promise.resolve(createJsonResponse({ data: { items: [] } })),
+    );
+    vi.stubGlobal("fetch", requestMock);
+
+    await apiClient.get("/cart");
+
+    const requestInit = requestMock.mock.calls[0]?.[1];
+    const requestHeaders = new Headers(requestInit?.headers);
+
+    expect(requestHeaders.get("X-Guest-Token")).toBe("guest-token-abc");
+  });
 });
