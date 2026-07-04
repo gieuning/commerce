@@ -3,9 +3,11 @@ package com.gieun.commerce.global.security;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import com.gieun.commerce.domain.user.entity.Role;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,9 +20,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-  private static final String AUTHORIZATION_HEADER = "Authorization";
-  private static final String BEARER_PREFIX = "Bearer ";
 
   private final JwtTokenProvider jwtTokenProvider;
 
@@ -58,10 +57,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   private String resolveToken(HttpServletRequest request) {
-    String bearer = request.getHeader(AUTHORIZATION_HEADER);
-    if (StringUtils.hasText(bearer) && bearer.startsWith(BEARER_PREFIX)) {
-      return bearer.substring(BEARER_PREFIX.length());
+    if (request.getCookies() == null) {
+      return null;
     }
-    return null;
+    return Arrays.stream(request.getCookies())
+        .filter(cookie -> AuthCookieProvider.ACCESS_TOKEN_COOKIE.equals(cookie.getName()))
+        .map(Cookie::getValue)
+        .filter(StringUtils::hasText)
+        .findFirst()
+        .orElse(null);
   }
 }

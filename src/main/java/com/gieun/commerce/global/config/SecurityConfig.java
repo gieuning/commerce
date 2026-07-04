@@ -35,6 +35,8 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     return http
+        // CSRF 비활성: 인증 쿠키가 SameSite=Lax라 크로스사이트 요청엔 자동 전송되지 않음.
+        // ⚠️ 이 방어는 "상태 변경 엔드포인트가 GET에 없다"는 전제에서 성립 — 향후 상태변경 GET을 만들면 구멍이 열림.
         .csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .formLogin(AbstractHttpConfigurer::disable)
@@ -42,7 +44,8 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(
                 "/users/signup",
-                "/users/login"
+                "/users/login",
+                "/users/logout"
             ).permitAll()
             .requestMatchers(
                 "/swagger-ui/**",

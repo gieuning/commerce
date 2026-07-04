@@ -36,6 +36,8 @@ jwt:
   # HS256은 최소 256bit(32바이트↑) 필요. JWT_SECRET 환경변수 필수(미설정 시 기동 실패 = fail-closed).
   secret: ${JWT_SECRET}
   expiration: 3600000   # Access Token 만료 시간 (ms) = 1시간
+  cookie:
+    secure: ${JWT_COOKIE_SECURE:false}   # 로컬(http) false, 운영(https) true
 
 payment:
   toss:
