@@ -41,12 +41,13 @@ export const router = createBrowserRouter([
         element: <SignupPage />,
       },
       {
+        // 장바구니는 게스트도 접근 가능 (담기/조회). 결제는 아래 ProtectedRoute에서 인증 필요.
+        path: "cart",
+        element: <CartPage />,
+      },
+      {
         element: <ProtectedRoute />,
         children: [
-          {
-            path: "cart",
-            element: <CartPage />,
-          },
           {
             path: "orders",
             element: <OrderListPage />,
