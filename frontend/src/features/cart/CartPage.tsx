@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useAuth } from "@/hooks/useAuth";
 import { cartService } from "@/services/cartService";
 import { orderService } from "@/services/orderService";
 import type { Cart } from "@/types/cart";
@@ -17,6 +18,8 @@ import { CartSummary } from "@/features/cart/components/CartSummary";
 
 export const CartPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -76,6 +79,12 @@ export const CartPage = () => {
 
   const handleCreateOrder = async () => {
     if (!cart || isActionLoading) {
+      return;
+    }
+
+    // 결제(주문)는 회원 전용 — 게스트는 로그인으로 유도(로그인 후 장바구니로 복귀)
+    if (!isAuthenticated) {
+      void navigate(ROUTES.LOGIN, { state: { from: location } });
       return;
     }
 

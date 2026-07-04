@@ -4,6 +4,8 @@ import type { ApiErrorResponse, ApiResponse } from "@/types/api";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+const GUEST_TOKEN_HEADER = "X-Guest-Token";
+
 interface RequestOptions<TBody> {
   method: HttpMethod;
   body?: TBody;
@@ -37,6 +39,13 @@ const createHeaders = (): Headers => {
 
   if (accessToken) {
     requestHeaders.set("Authorization", `Bearer ${accessToken}`);
+  }
+
+  // 게스트 장바구니 식별용. 회원은 서버가 JWT를 우선하므로 함께 보내도 무해하다.
+  const guestToken = localStorage.getItem(STORAGE_KEYS.GUEST_TOKEN);
+
+  if (guestToken) {
+    requestHeaders.set(GUEST_TOKEN_HEADER, guestToken);
   }
 
   return requestHeaders;
@@ -79,6 +88,13 @@ const request = async <TResponse, TBody = unknown>(
     headers: createHeaders(),
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
+
+  // 서버가 게스트 첫 담기 시 발급한 토큰을 저장해 이후 요청에 재사용한다.
+  const issuedGuestToken = response.headers.get(GUEST_TOKEN_HEADER);
+
+  if (issuedGuestToken) {
+    localStorage.setItem(STORAGE_KEYS.GUEST_TOKEN, issuedGuestToken);
+  }
 
   const responseBody = await parseResponseBody<TResponse>(response);
 
