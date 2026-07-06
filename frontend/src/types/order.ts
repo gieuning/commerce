@@ -29,6 +29,7 @@ export interface OrderItem {
 
 export interface Order {
   orderId: number;
+  orderNo: number;
   status: OrderStatus;
   totalProductPrice: string;
   discountAmount: string;

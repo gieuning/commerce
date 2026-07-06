@@ -37,6 +37,8 @@ public class OrderService {
   @Transactional
   public OrderResponse create(Long userId, OrderCreateRequest request) {
     Order order = Order.create(userId);
+    // 회원별 주문 순번 부여(기존 주문 수 + 1). UNIQUE(user_id, user_order_no)로 동시성 보강.
+    order.assignUserOrderNo(orderRepository.countByUserId(userId) + 1);
 
     for (OrderItemRequest itemRequest : sortRequestItemsByStockLockOrder(request.getItems())) {
       Product product = productRepository.findByIdForUpdate(itemRequest.getProductId())
