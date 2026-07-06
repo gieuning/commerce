@@ -40,8 +40,8 @@ export const AppLayout = () => {
     );
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     void navigate(ROUTES.PRODUCTS);
   };
 
@@ -89,7 +89,7 @@ export const AppLayout = () => {
                     <UserRound size={14} />
                     {user?.name}
                   </span>
-                  <Button icon={<LogOut size={14} />} onClick={handleLogout} size="sm" variant="ghost">
+                  <Button icon={<LogOut size={14} />} onClick={() => void handleLogout()} size="sm" variant="ghost">
                     로그아웃
                   </Button>
                 </>
