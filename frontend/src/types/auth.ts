@@ -12,10 +12,6 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface TokenResponse {
-  accessToken: string;
-}
-
 export interface UserProfile {
   id: number;
   email: string;

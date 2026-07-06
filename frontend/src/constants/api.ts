@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
   USERS: {
     SIGNUP: "/users/signup",
     LOGIN: "/users/login",
+    LOGOUT: "/users/logout",
     ME: "/users/me",
   },
   PRODUCTS: {
