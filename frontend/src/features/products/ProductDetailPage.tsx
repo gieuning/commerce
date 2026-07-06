@@ -127,10 +127,22 @@ export const ProductDetailPage = () => {
 
   return (
     <section className="grid gap-8">
-      <PageHeader title={product.name} description={product.description ?? undefined} />
+      <PageHeader title={product.name} />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="overflow-hidden rounded-card border border-line bg-surface">
-          <ProductImage imageUrl={product.imageUrl} name={product.name} soldOut={product.soldOut} />
+        <div className="grid h-fit gap-6">
+          <div className="overflow-hidden rounded-card border border-line bg-surface">
+            <ProductImage imageUrl={product.imageUrl} name={product.name} soldOut={product.soldOut} />
+          </div>
+          <section className="rounded-card border border-line bg-surface p-6">
+            <h2 className="text-lg font-bold text-ink">{MESSAGES.PRODUCT.DESCRIPTION_TITLE}</h2>
+            {product.description ? (
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-ink-soft">
+                {product.description}
+              </p>
+            ) : (
+              <p className="mt-3 text-sm text-neutral">{MESSAGES.PRODUCT.DESCRIPTION_EMPTY}</p>
+            )}
+          </section>
         </div>
         <form className="grid h-fit gap-5 rounded-card border border-line bg-surface p-5" noValidate onSubmit={handleAddCart}>
           <div className="flex items-center justify-between gap-3">
