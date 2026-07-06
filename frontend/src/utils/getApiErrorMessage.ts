@@ -20,7 +20,6 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
   OPTIMISTIC_LOCK_CONFLICT: MESSAGES.API.CONFLICT,
   SERVER_ERROR: MESSAGES.API.SERVER_ERROR,
   UNAUTHORIZED_ACCESS: MESSAGES.AUTH.ACCESS_DENIED,
-  VALIDATION_ERROR: MESSAGES.API.BAD_REQUEST,
 };
 
 const SESSION_EXPIRED_ERROR_CODES = new Set([
@@ -40,6 +39,11 @@ export const getApiErrorMessage = (error: unknown): string => {
     }
 
     return error instanceof Error ? error.message : MESSAGES.COMMON.UNKNOWN_ERROR;
+  }
+
+  // 검증 오류는 어떤 값이 왜 잘못됐는지 서버가 준 구체 메시지를 그대로 노출한다.
+  if (error.errorCode === "VALIDATION_ERROR") {
+    return error.message || MESSAGES.API.BAD_REQUEST;
   }
 
   const codeMessage = ERROR_CODE_MESSAGES[error.errorCode];

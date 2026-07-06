@@ -43,6 +43,30 @@ describe("getApiErrorMessage", () => {
     expect(isSessionExpiredError(error)).toBe(false);
   });
 
+  it("surfaces the server message for validation errors", () => {
+    const error = new ApiError(
+      {
+        errorCode: "VALIDATION_ERROR",
+        errorMessage: "비밀번호는 8자 이상 72자 이하여야 합니다.",
+      },
+      400,
+    );
+
+    expect(getApiErrorMessage(error)).toBe("비밀번호는 8자 이상 72자 이하여야 합니다.");
+  });
+
+  it("falls back to a generic bad request message when validation detail is empty", () => {
+    const error = new ApiError(
+      {
+        errorCode: "VALIDATION_ERROR",
+        errorMessage: "",
+      },
+      400,
+    );
+
+    expect(getApiErrorMessage(error)).toBe(MESSAGES.API.BAD_REQUEST);
+  });
+
   it("maps not found responses to a user-friendly message", () => {
     const error = new ApiError(
       {

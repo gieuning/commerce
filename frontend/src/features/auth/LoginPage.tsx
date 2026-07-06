@@ -8,6 +8,10 @@ import { ROUTES } from "@/constants/routes";
 import { STORAGE_KEYS } from "@/constants/storageKeys";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  type LoginFieldErrors,
+  validateLoginForm,
+} from "@/features/auth/validateLoginForm";
 
 interface RedirectLocation {
   pathname: string;
@@ -23,9 +27,21 @@ export const LoginPage = () => {
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
+
+  const clearFieldError = (field: keyof LoginFieldErrors) =>
+    setFieldErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    const validationErrors = validateLoginForm({ email, password });
+    setFieldErrors(validationErrors);
+
+    if (Object.values(validationErrors).some(Boolean)) {
+      return;
+    }
+
     const loginResult = await runAsyncAction(() => login({ email, password }));
 
     if (loginResult !== null) {
@@ -54,21 +70,29 @@ export const LoginPage = () => {
   return (
     <section className="mx-auto max-w-md">
       <PageHeader title="로그인" description="주문과 장바구니를 사용하려면 로그인해 주세요." />
-      <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+      <form className="mt-6 grid gap-4" noValidate onSubmit={handleSubmit}>
         <Input
           autoComplete="email"
+          errorMessage={fieldErrors.email}
           label="이메일"
           name="email"
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            clearFieldError("email");
+          }}
           required
           type="email"
           value={email}
         />
         <Input
           autoComplete="current-password"
+          errorMessage={fieldErrors.password}
           label="비밀번호"
           name="password"
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            clearFieldError("password");
+          }}
           required
           type="password"
           value={password}
