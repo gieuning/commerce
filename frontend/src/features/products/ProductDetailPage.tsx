@@ -1,6 +1,6 @@
-import { ShoppingCart } from "lucide-react";
+import { CreditCard, ShoppingCart } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -12,7 +12,9 @@ import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
 import { PRODUCT_STATUS_LABELS, PRODUCT_STATUS_TONES } from "@/constants/statusLabels";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useAuth } from "@/hooks/useAuth";
 import { cartService } from "@/services/cartService";
+import { orderService } from "@/services/orderService";
 import { productService } from "@/services/productService";
 import { PRODUCT_STATUS, type ProductDetail } from "@/types/product";
 import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
@@ -30,7 +32,9 @@ const parseProductId = (productId: string | undefined): number | null => {
 
 export const ProductDetailPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams();
+  const { isAuthenticated } = useAuth();
   const productId = parseProductId(params.productId);
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -117,6 +121,34 @@ export const ProductDetailPage = () => {
     }
   };
 
+  const handleBuyNow = async () => {
+    if (productId === null || !canAddToCart) {
+      return;
+    }
+
+    // 주문 생성은 회원 전용. 비로그인 시 로그인 후 돌아오도록 한다.
+    if (!isAuthenticated) {
+      void navigate(ROUTES.LOGIN, { state: { from: location } });
+      return;
+    }
+
+    const orderResult = await runAsyncAction(() =>
+      orderService.createOrder({
+        items: [
+          {
+            productId,
+            optionCombinationId: selectedCombination?.id ?? undefined,
+            quantity,
+          },
+        ],
+      }),
+    );
+
+    if (orderResult !== null) {
+      void navigate(ROUTES.PAYMENT_CHECKOUT(orderResult.orderId));
+    }
+  };
+
   if (isLoading) {
     return <LoadingState />;
   }
@@ -166,9 +198,26 @@ export const ProductDetailPage = () => {
             value={quantity}
           />
           {actionErrorMessage ? <ErrorState message={actionErrorMessage} /> : null}
-          <Button disabled={!canAddToCart || isActionLoading} icon={<ShoppingCart size={16} />} type="submit">
-            {isActionLoading ? "담는 중" : "장바구니 담기"}
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              className="w-full"
+              disabled={!canAddToCart || isActionLoading}
+              icon={<ShoppingCart size={16} />}
+              type="submit"
+              variant="secondary"
+            >
+              {isActionLoading ? "담는 중" : "장바구니"}
+            </Button>
+            <Button
+              className="w-full"
+              disabled={!canAddToCart || isActionLoading}
+              icon={<CreditCard size={16} />}
+              onClick={handleBuyNow}
+              type="button"
+            >
+              바로구매
+            </Button>
+          </div>
         </form>
       </div>
     </section>
