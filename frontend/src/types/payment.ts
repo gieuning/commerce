@@ -36,6 +36,7 @@ export interface PaymentCancelRequest {
 export interface Payment {
   paymentId: number;
   orderId: number;
+  orderNo: number;
   userId: number;
   paymentKey: string | null;
   merchantOrderId: string;
