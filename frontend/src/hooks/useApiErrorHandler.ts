@@ -11,7 +11,7 @@ export const useApiErrorHandler = () => {
 
     if (isSessionExpiredError(error)) {
       sessionStorage.setItem(STORAGE_KEYS.AUTH_NOTICE, errorMessage);
-      logout();
+      void logout();
     }
 
     return errorMessage;

@@ -50,8 +50,7 @@ describe("apiClient", () => {
     });
   });
 
-  it("attaches authorization header when token exists", async () => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access-token-value");
+  it("sends the auth cookie by using credentials include", async () => {
     const requestMock = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
       Promise.resolve(createJsonResponse({ data: { id: 1 } })),
     );
@@ -62,7 +61,9 @@ describe("apiClient", () => {
     const requestInit = requestMock.mock.calls[0]?.[1];
     const requestHeaders = new Headers(requestInit?.headers);
 
-    expect(requestHeaders.get("Authorization")).toBe("Bearer access-token-value");
+    expect(requestInit?.credentials).toBe("include");
+    // 토큰은 쿠키로만 전송된다 — Authorization 헤더는 더 이상 붙지 않는다.
+    expect(requestHeaders.has("Authorization")).toBe(false);
   });
 
   it("stores the guest token issued in the response header", async () => {
@@ -70,14 +71,16 @@ describe("apiClient", () => {
       status: 201,
       headers: { "Content-Type": "application/json", "X-Guest-Token": "guest-token-abc" },
     });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((_input: RequestInfo | URL, _init?: RequestInit) => Promise.resolve(guestResponse)),
+    const requestMock = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
+      Promise.resolve(guestResponse),
     );
+    vi.stubGlobal("fetch", requestMock);
 
     await apiClient.post("/cart/items", { productId: 1, quantity: 1 });
 
     expect(localStorage.getItem(STORAGE_KEYS.GUEST_TOKEN)).toBe("guest-token-abc");
+    // 상태 변경(POST) 요청에도 인증 쿠키가 실려야 한다.
+    expect(requestMock.mock.calls[0]?.[1]?.credentials).toBe("include");
   });
 
   it("attaches guest token header when guest token exists", async () => {
