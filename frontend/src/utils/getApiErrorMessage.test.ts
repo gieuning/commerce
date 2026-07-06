@@ -43,6 +43,30 @@ describe("getApiErrorMessage", () => {
     expect(isSessionExpiredError(error)).toBe(false);
   });
 
+  it("surfaces the server message for domain errors like duplicate email", () => {
+    const error = new ApiError(
+      {
+        errorCode: "DUPLICATE_EMAIL",
+        errorMessage: "이미 사용 중인 이메일입니다.",
+      },
+      400,
+    );
+
+    expect(getApiErrorMessage(error)).toBe("이미 사용 중인 이메일입니다.");
+  });
+
+  it("falls back to a generic message for unstructured HTTP errors", () => {
+    const error = new ApiError(
+      {
+        errorCode: "HTTP_ERROR",
+        errorMessage: "Bad Request",
+      },
+      400,
+    );
+
+    expect(getApiErrorMessage(error)).toBe(MESSAGES.API.BAD_REQUEST);
+  });
+
   it("surfaces the server message for validation errors", () => {
     const error = new ApiError(
       {

@@ -41,15 +41,16 @@ export const getApiErrorMessage = (error: unknown): string => {
     return error instanceof Error ? error.message : MESSAGES.COMMON.UNKNOWN_ERROR;
   }
 
-  // 검증 오류는 어떤 값이 왜 잘못됐는지 서버가 준 구체 메시지를 그대로 노출한다.
-  if (error.errorCode === "VALIDATION_ERROR") {
-    return error.message || MESSAGES.API.BAD_REQUEST;
-  }
-
   const codeMessage = ERROR_CODE_MESSAGES[error.errorCode];
 
   if (codeMessage) {
     return codeMessage;
+  }
+
+  // 백엔드 도메인 에러(구조화된 errorCode + 메시지)는 서버가 준 구체 메시지를 그대로 노출한다.
+  // (중복 이메일, 검증 오류 등) "HTTP_ERROR"는 구조화되지 않은 응답이라 아래 일반 상태 문구로 폴백한다.
+  if (error.errorCode !== "HTTP_ERROR" && error.message) {
+    return error.message;
   }
 
   const statusMessage = HTTP_STATUS_MESSAGES[error.status];
