@@ -2,6 +2,7 @@ import { API_ENDPOINTS } from "@/constants/api";
 import { DEFAULT_PAGE_NUMBER, DEFAULT_PAGE_SIZE } from "@/constants/pagination";
 import type { PageResult } from "@/types/api";
 import type {
+  OptionCombinationUpdateRequest,
   ProductCreateRequest,
   ProductDetail,
   ProductSummary,
@@ -49,6 +50,15 @@ export const productService = {
   updateStock: (productId: number, requestBody: StockUpdateRequest): Promise<ProductDetail> =>
     apiClient.patch<ProductDetail, StockUpdateRequest>(
       API_ENDPOINTS.PRODUCTS.STOCK(productId),
+      requestBody,
+    ),
+  updateCombination: (
+    productId: number,
+    combinationId: number,
+    requestBody: OptionCombinationUpdateRequest,
+  ): Promise<ProductDetail> =>
+    apiClient.patch<ProductDetail, OptionCombinationUpdateRequest>(
+      API_ENDPOINTS.PRODUCTS.COMBINATION(productId, combinationId),
       requestBody,
     ),
   deleteProduct: (productId: number): Promise<void> =>
