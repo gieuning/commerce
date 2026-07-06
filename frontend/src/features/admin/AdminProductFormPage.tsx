@@ -10,6 +10,7 @@ import { productService } from "@/services/productService";
 import type { ProductCreateRequest, ProductDetail, ProductUpdateRequest } from "@/types/product";
 import { getApiErrorMessage } from "@/utils/getApiErrorMessage";
 import { parseRouteNumber } from "@/utils/parseRouteNumber";
+import { OptionCombinationEditor } from "@/features/admin/components/OptionCombinationEditor";
 import { ProductForm } from "@/features/admin/components/ProductForm";
 import { StockControl } from "@/features/admin/components/StockControl";
 
@@ -86,7 +87,7 @@ export const AdminProductFormPage = () => {
       {actionErrorMessage ? <ErrorState message={actionErrorMessage} /> : null}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <ProductForm isSubmitting={isActionLoading} onSubmit={handleSubmit} product={product ?? undefined} />
-        {isEditMode && product ? (
+        {isEditMode && product && !product.hasOptions ? (
           <StockControl
             initialStock={product.stock}
             isSubmitting={isActionLoading}
@@ -94,6 +95,9 @@ export const AdminProductFormPage = () => {
           />
         ) : null}
       </div>
+      {isEditMode && product && product.hasOptions ? (
+        <OptionCombinationEditor onUpdated={setProduct} product={product} />
+      ) : null}
     </section>
   );
 };

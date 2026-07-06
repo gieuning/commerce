@@ -55,6 +55,9 @@ export const MESSAGES = {
     OPTION_COMBINATION_REQUIRED: "옵션 조합을 생성해 주세요.",
     OPTION_MODE_SINGLE: "단일 상품",
     OPTION_MODE_OPTION: "옵션 상품",
+    OPTION_GROUPS_TITLE: "옵션 구성",
+    COMBINATION_TITLE: "옵션 조합",
+    COMBINATION_EMPTY: "등록된 옵션 조합이 없습니다.",
   },
   CART: {
     EMPTY: "장바구니가 비어 있습니다.",
