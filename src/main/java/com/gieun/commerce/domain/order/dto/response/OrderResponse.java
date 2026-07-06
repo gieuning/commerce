@@ -16,6 +16,7 @@ import lombok.experimental.FieldDefaults;
 public class OrderResponse {
 
   Long orderId;
+  Long orderNo;
   OrderStatus status;
   BigDecimal totalProductPrice;
   BigDecimal discountAmount;
@@ -27,6 +28,7 @@ public class OrderResponse {
   public static OrderResponse of(Order order) {
     return OrderResponse.builder()
         .orderId(order.getId())
+        .orderNo(order.getUserOrderNo())
         .status(order.getStatus())
         .totalProductPrice(order.getTotalProductPrice())
         .discountAmount(order.getDiscountAmount())
