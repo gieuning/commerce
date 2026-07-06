@@ -32,7 +32,7 @@ const createOrderName = (order: Order): string => {
   const firstOrderItem = order.items[0];
 
   if (!firstOrderItem) {
-    return `주문 #${order.orderId}`;
+    return `주문 #${order.orderNo}`;
   }
 
   const extraItemCount = order.items.length - 1;
@@ -132,7 +132,7 @@ export const PaymentCheckoutPage = () => {
     <section className="grid gap-6">
       <PageHeader
         description={`주문일시 ${formatDateTime(order.orderedAt)}`}
-        title={`주문 #${order.orderId} 결제`}
+        title={`주문 #${order.orderNo} 결제`}
       />
       {errorMessage ? <ErrorState message={errorMessage} /> : null}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
