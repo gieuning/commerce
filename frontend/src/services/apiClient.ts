@@ -35,11 +35,6 @@ const createHeaders = (): Headers => {
   const requestHeaders = new Headers({
     "Content-Type": "application/json",
   });
-  const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-
-  if (accessToken) {
-    requestHeaders.set("Authorization", `Bearer ${accessToken}`);
-  }
 
   // 게스트 장바구니 식별용. 회원은 서버가 JWT를 우선하므로 함께 보내도 무해하다.
   const guestToken = localStorage.getItem(STORAGE_KEYS.GUEST_TOKEN);
@@ -86,6 +81,9 @@ const request = async <TResponse, TBody = unknown>(
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: options.method,
     headers: createHeaders(),
+    // 인증은 서버가 심은 HttpOnly 쿠키로 처리한다 — JS는 토큰을 다루지 않으며,
+    // 크로스 오리진에서도 쿠키가 실리도록 credentials를 포함한다.
+    credentials: "include",
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
 
