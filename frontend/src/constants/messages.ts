@@ -5,6 +5,16 @@ export const MESSAGES = {
     EMPTY_RESULT: "표시할 내용이 없습니다.",
     RETRY: "다시 시도",
   },
+  VALIDATION: {
+    EMAIL_REQUIRED: "이메일을 입력해 주세요.",
+    EMAIL_INVALID: "올바른 이메일 형식이 아닙니다.",
+    NAME_REQUIRED: "이름을 입력해 주세요.",
+    NAME_INVALID: "이름에는 한글 또는 영문만 입력할 수 있습니다.",
+    PASSWORD_REQUIRED: "비밀번호를 입력해 주세요.",
+    PASSWORD_LENGTH: (min: number, max: number) =>
+      `비밀번호는 ${min}자 이상 ${max}자 이하여야 합니다.`,
+    PHONE_INVALID: "휴대폰 번호는 '-' 없이 숫자 10~11자리로 입력해 주세요.",
+  },
   AUTH: {
     LOGIN_REQUIRED: "로그인이 필요한 화면입니다.",
     ADMIN_REQUIRED: "관리자 권한이 필요한 화면입니다.",
@@ -38,6 +48,8 @@ export const MESSAGES = {
   ADMIN_PRODUCT: {
     FORM_DESCRIPTION: "상품 기본 정보와 옵션 구성을 입력합니다.",
     LOAD_FAILED: "상품 정보를 불러오지 못했습니다.",
+    NAME_REQUIRED: "상품명을 입력해 주세요.",
+    STOCK_REQUIRED: "재고 수량을 입력해 주세요.",
     INVALID_NUMBER: "숫자 값을 확인해 주세요.",
     OPTION_GROUP_REQUIRED: "옵션 그룹명과 옵션값을 입력해 주세요.",
     OPTION_COMBINATION_REQUIRED: "옵션 조합을 생성해 주세요.",

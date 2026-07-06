@@ -132,7 +132,7 @@ export const ProductDetailPage = () => {
         <div className="overflow-hidden rounded-card border border-line bg-surface">
           <ProductImage imageUrl={product.imageUrl} name={product.name} soldOut={product.soldOut} />
         </div>
-        <form className="grid h-fit gap-5 rounded-card border border-line bg-surface p-5" onSubmit={handleAddCart}>
+        <form className="grid h-fit gap-5 rounded-card border border-line bg-surface p-5" noValidate onSubmit={handleAddCart}>
           <div className="flex items-center justify-between gap-3">
             <PriceText amount={displayPrice} className="text-2xl font-bold" />
             <StatusBadge
