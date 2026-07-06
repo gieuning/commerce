@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface OrderRepository extends JpaRepository<Order, Long>, OrderRepositoryCustom {
 
+  long countByUserId(Long userId);
+
   @EntityGraph(attributePaths = "items")
   Optional<Order> findByIdAndUserId(Long id, Long userId);
 

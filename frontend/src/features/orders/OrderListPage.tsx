@@ -73,7 +73,7 @@ export const OrderListPage = () => {
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-semibold">주문 #{order.orderId}</h2>
+                    <h2 className="font-semibold">주문 #{order.orderNo}</h2>
                     <StatusBadge
                       label={ORDER_STATUS_LABELS[order.status]}
                       tone={ORDER_STATUS_TONES[order.status]}

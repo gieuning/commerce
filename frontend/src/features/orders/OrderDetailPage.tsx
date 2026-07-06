@@ -74,7 +74,7 @@ export const OrderDetailPage = () => {
     <section className="grid gap-6">
       <PageHeader
         description={`주문일시 ${formatDateTime(order.orderedAt)}`}
-        title={`주문 #${order.orderId}`}
+        title={`주문 #${order.orderNo}`}
       />
       {actionErrorMessage ? <ErrorState message={actionErrorMessage} /> : null}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
