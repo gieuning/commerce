@@ -68,3 +68,9 @@ export interface ProductUpdateRequest {
 export interface StockUpdateRequest {
   stock: number;
 }
+
+export interface OptionCombinationUpdateRequest {
+  additionalPrice: number;
+  stock: number;
+  status: ProductStatus;
+}

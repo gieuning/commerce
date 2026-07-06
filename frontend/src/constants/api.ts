@@ -18,6 +18,8 @@ export const API_ENDPOINTS = {
     CREATE: "/products",
     UPDATE: (productId: number) => `/products/${productId}`,
     STOCK: (productId: number) => `/products/${productId}/stock`,
+    COMBINATION: (productId: number, combinationId: number) =>
+      `/products/${productId}/combinations/${combinationId}`,
     DELETE: (productId: number) => `/products/${productId}`,
   },
   CART: {
