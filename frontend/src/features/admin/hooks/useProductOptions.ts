@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MESSAGES } from "@/constants/messages";
 import type { OptionCombinationRequest, OptionGroupRequest, ProductCreateRequest } from "@/types/product";
+import { generateId } from "@/utils/generateId";
 import { parseNonNegativeNumberField } from "@/utils/parseNumberField";
 
 export type ProductOptionMode = "single" | "option";
@@ -26,7 +27,7 @@ interface ProductOptionState {
 }
 
 const createOptionGroup = (): EditableOptionGroup => ({
-  id: crypto.randomUUID(),
+  id: generateId(),
   name: "",
   valuesText: "",
 });
