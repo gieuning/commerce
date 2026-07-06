@@ -18,6 +18,7 @@ public class PaymentResponse {
 
   Long paymentId;
   Long orderId;
+  Long orderNo;
   Long userId;
   String paymentKey;
   String merchantOrderId;
@@ -34,6 +35,7 @@ public class PaymentResponse {
     return PaymentResponse.builder()
         .paymentId(payment.getId())
         .orderId(payment.getOrderId())
+        .orderNo(payment.getOrderNo())
         .userId(payment.getUserId())
         .paymentKey(payment.getPaymentKey())
         .merchantOrderId(payment.getMerchantOrderId())

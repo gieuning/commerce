@@ -87,6 +87,7 @@ public class PaymentService {
         })
         .orElseGet(() -> paymentRepository.save(Payment.request(
             order.getId(),
+            order.getUserOrderNo(),
             userId,
             createMerchantOrderId(order.getId()),
             PgProvider.TOSS,

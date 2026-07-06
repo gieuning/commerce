@@ -37,6 +37,10 @@ public class Payment extends BaseEntity {
   @Column(nullable = false)
   Long orderId;
 
+  // 회원별 주문번호(orders.user_order_no)를 비정규화 저장 — 결제 화면 표시용.
+  @Column(nullable = false)
+  Long orderNo;
+
   @Column(nullable = false)
   Long userId;
 
@@ -72,6 +76,7 @@ public class Payment extends BaseEntity {
 
   public static Payment request(
       Long orderId,
+      Long orderNo,
       Long userId,
       String merchantOrderId,
       PgProvider pgProvider,
@@ -82,6 +87,7 @@ public class Payment extends BaseEntity {
 
     return Payment.builder()
         .orderId(Objects.requireNonNull(orderId, "주문 ID는 필수입니다."))
+        .orderNo(Objects.requireNonNull(orderNo, "주문 순번은 필수입니다."))
         .userId(Objects.requireNonNull(userId, "회원 ID는 필수입니다."))
         .merchantOrderId(Objects.requireNonNull(merchantOrderId, "주문 번호는 필수입니다."))
         .pgProvider(Objects.requireNonNull(pgProvider, "PG사는 필수입니다."))
