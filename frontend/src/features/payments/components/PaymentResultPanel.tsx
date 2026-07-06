@@ -26,7 +26,7 @@ export const PaymentResultPanel = ({
       <div className="grid gap-3 rounded-card bg-background p-4 text-sm">
         <div className="flex justify-between">
           <span className="text-ink-soft">주문 번호</span>
-          <span className="font-semibold">{payment.orderId}</span>
+          <span className="font-semibold">주문 #{payment.orderNo}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-ink-soft">결제 번호</span>
