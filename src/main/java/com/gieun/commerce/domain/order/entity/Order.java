@@ -41,6 +41,10 @@ public class Order extends BaseEntity {
   @Column(nullable = false)
   Long userId;
 
+  // 회원별 주문 순번(1,2,3...). 전역 PK(id)와 별개. 생성 시 서비스가 할당한다.
+  @Column(nullable = false)
+  Long userOrderNo;
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   OrderStatus status;
@@ -78,6 +82,10 @@ public class Order extends BaseEntity {
         .totalPrice(BigDecimal.ZERO)
         .orderedAt(LocalDateTime.now())
         .build();
+  }
+
+  public void assignUserOrderNo(Long userOrderNo) {
+    this.userOrderNo = Objects.requireNonNull(userOrderNo, "주문 순번은 필수입니다.");
   }
 
   public void addItem(OrderItem item) {
