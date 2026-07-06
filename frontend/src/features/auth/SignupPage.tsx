@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorState } from "@/components/ErrorState";
 import { Input } from "@/components/Input";
+import { Modal } from "@/components/Modal";
 import { PageHeader } from "@/components/PageHeader";
+import { MESSAGES } from "@/constants/messages";
 import { ROUTES } from "@/constants/routes";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +27,7 @@ export const SignupPage = () => {
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [fieldErrors, setFieldErrors] = useState<SignupFieldErrors>({});
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const clearFieldError = (field: keyof SignupFieldErrors) =>
     setFieldErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
@@ -49,7 +52,7 @@ export const SignupPage = () => {
     );
 
     if (signupResult !== null) {
-      void navigate(ROUTES.LOGIN);
+      setShowWelcome(true);
     }
   };
 
@@ -119,6 +122,12 @@ export const SignupPage = () => {
           로그인
         </Link>
       </p>
+      <Modal
+        description={MESSAGES.AUTH.SIGNUP_WELCOME_BODY}
+        isOpen={showWelcome}
+        onConfirm={() => navigate(ROUTES.HOME)}
+        title={MESSAGES.AUTH.SIGNUP_WELCOME_TITLE}
+      />
     </section>
   );
 };
