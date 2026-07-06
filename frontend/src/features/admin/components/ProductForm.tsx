@@ -26,6 +26,11 @@ export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProp
   const productOptions = useProductOptions();
 
   const createBaseProductRequest = (): ProductUpdateRequest | null => {
+    if (!name.trim()) {
+      setFormErrorMessage(MESSAGES.ADMIN_PRODUCT.NAME_REQUIRED);
+      return null;
+    }
+
     const parsedPrice = parsePositiveNumberField(price);
 
     if (parsedPrice === null) {
@@ -90,7 +95,7 @@ export const ProductForm = ({ isSubmitting, onSubmit, product }: ProductFormProp
   };
 
   return (
-    <form className="grid gap-4 rounded-card border border-line bg-surface p-5" onSubmit={handleSubmit}>
+    <form className="grid gap-4 rounded-card border border-line bg-surface p-5" noValidate onSubmit={handleSubmit}>
       {formErrorMessage || productOptions.errorMessage ? (
         <ErrorState message={formErrorMessage ?? productOptions.errorMessage ?? MESSAGES.COMMON.UNKNOWN_ERROR} />
       ) : null}

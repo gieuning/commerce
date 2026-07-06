@@ -15,7 +15,7 @@ export const SearchBar = ({ keyword, onKeywordChange, onSearch }: SearchBarProps
   };
 
   return (
-    <form className="relative" onSubmit={handleSubmit} role="search">
+    <form className="relative" noValidate onSubmit={handleSubmit} role="search">
       <Search
         aria-hidden
         className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral"
