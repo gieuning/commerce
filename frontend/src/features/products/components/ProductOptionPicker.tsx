@@ -9,6 +9,16 @@ interface ProductOptionPickerProps {
   onChange: (combinationId: number | null) => void;
 }
 
+// 옵션 추가금은 합산값이 아니라 "(+1,000원)"처럼 더해지는 금액으로 보여준다(추가금 0이면 생략).
+const buildOptionLabel = (combination: OptionCombination): string => {
+  const values = combination.optionValues.join(" / ");
+  const additionalPrice = Number(combination.additionalPrice);
+  const priceLabel = additionalPrice > 0 ? ` (+${formatCurrency(additionalPrice)})` : "";
+  const stateLabel = PRODUCT_STATUS_LABELS[combination.status];
+
+  return `${values}${priceLabel} · 재고 ${combination.stock} · ${stateLabel}`;
+};
+
 export const ProductOptionPicker = ({
   combinations,
   onChange,
@@ -29,8 +39,7 @@ export const ProductOptionPicker = ({
         key={combination.id}
         value={combination.id}
       >
-        {combination.optionValues.join(" / ")} · {formatCurrency(combination.finalPrice)} · 재고{" "}
-        {combination.stock} · {PRODUCT_STATUS_LABELS[combination.status]}
+        {buildOptionLabel(combination)}
       </option>
     ))}
   </Select>
