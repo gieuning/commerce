@@ -22,7 +22,6 @@ CRUD를 넓게 펼치는 대신, **"돈과 재고가 어긋나지 않게"** 라�
 모놀리스지만 도메인 경계(user · product · cart · order · payment)를 패키지로 강제하고,
 도메인 간 통신을 Service 인터페이스 호출로 제한했다. 재고 차감 + 주문 상태 + 결제 승인이
 하나의 로컬 트랜잭션으로 묶여야 하는 도메인 특성상, 분산 환경의 복잡성 대신 트랜잭션 정합성을 택했다.
-→ 상세: [docs/architecture.md](docs/architecture.md)
 
 ## 핵심 기술 결정
 
@@ -38,7 +37,6 @@ CRUD를 넓게 펼치는 대신, **"돈과 재고가 어긋나지 않게"** 라�
 PG 승인은 성공했는데 로컬 검증/재고가 실패하는 경우(돈은 잡혔는데 시스템은 실패)는
 **보상 환불**로 풀고, 환불마저 실패하면 `payment_compensations` 테이블에 적재해
 스케줄러가 백오프 재시도 → 초과 시 운영자 알림(GAVE_UP)으로 넘긴다.
-→ 실패 경로 포함 시퀀스 4장: [docs/payment-flow-diagrams.md](docs/payment-flow-diagrams.md)
 
 ### 2. 재고 동시성 — 락 순서 고정 + 2-pass 차감
 
@@ -66,8 +64,6 @@ JWT 시크릿은 환경변수 미주입 시 기동 실패하는 fail-closed 설�
 - **결제 감사 테이블군** — 이벤트·취소·영수증·보상을 분리, PG 요청/응답 원문 보존
 
 ## ERD
-
-![ERD](docs/images/commerce-erd.svg)
 
 실선은 FK 제약, 점선은 논리 참조 — 결제 테이블군은 의도적으로 FK 없이 인덱스와
 애플리케이션 트랜잭션 경계로 정합성을 관리한다. 
@@ -128,3 +124,4 @@ commerce
 ├── frontend/             React 19 SPA (features/services 구조)
 └── docs/                 설계 문서 · 다이어그램 (아래)
 ```
+

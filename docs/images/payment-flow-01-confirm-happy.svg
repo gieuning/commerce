@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 892 784" width="892" height="784" font-family="'Pretendard Variable',Pretendard,-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Segoe UI',system-ui,sans-serif">
+<defs>
+<marker id="a-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#33414F"/></marker>
+<marker id="v-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#33414F" stroke-width="1.6"/></marker>
+<marker id="a-ext" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#B26400"/></marker>
+<marker id="v-ext" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#B26400" stroke-width="1.6"/></marker>
+<marker id="a-fail" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#BE3A2B"/></marker>
+<marker id="v-fail" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#BE3A2B" stroke-width="1.6"/></marker>
+</defs>
+<rect x="0" y="0" width="892" height="784" rx="12" fill="#FFFFFF" stroke="#D3DBE3"/>
+<rect x="16" y="214" width="860" height="198" rx="8" fill="rgba(21,94,194,0.065)" stroke="rgba(21,94,194,0.45)" stroke-width="1"/>
+<rect x="16" y="540" width="860" height="178" rx="8" fill="rgba(21,94,194,0.065)" stroke="rgba(21,94,194,0.45)" stroke-width="1"/>
+<line x1="128" y1="56" x2="128" y2="772" stroke="#D3DBE3" stroke-dasharray="4 4"/>
+<line x1="340" y1="56" x2="340" y2="772" stroke="#D3DBE3" stroke-dasharray="4 4"/>
+<line x1="552" y1="56" x2="552" y2="772" stroke="#D3DBE3" stroke-dasharray="4 4"/>
+<line x1="764" y1="56" x2="764" y2="772" stroke="#D3DBE3" stroke-dasharray="4 4"/>
+<rect x="40" y="10" width="176" height="46" rx="9" fill="#E7ECF1" stroke="#D3DBE3"/>
+<text x="128" y="30" text-anchor="middle" font-size="13.5" font-weight="650" fill="#1C2733">클라이언트</text>
+<text x="128" y="46" text-anchor="middle" font-size="10" fill="#5E6E7E" font-family="ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace">checkout redirect</text>
+<rect x="252" y="10" width="176" height="46" rx="9" fill="#E7ECF1" stroke="#D3DBE3"/>
+<text x="340" y="30" text-anchor="middle" font-size="13.5" font-weight="650" fill="#1C2733">PaymentService</text>
+<text x="340" y="46" text-anchor="middle" font-size="10" fill="#5E6E7E" font-family="ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace">confirm()</text>
+<rect x="464" y="10" width="176" height="46" rx="9" fill="#E7ECF1" stroke="#D3DBE3"/>
+<text x="552" y="30" text-anchor="middle" font-size="13.5" font-weight="650" fill="#1C2733">MySQL</text>
+<text x="552" y="46" text-anchor="middle" font-size="10" fill="#5E6E7E" font-family="ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace">InnoDB · FOR UPDATE</text>
+<rect x="676" y="10" width="176" height="46" rx="9" fill="#E7ECF1" stroke="#D3DBE3"/>
+<text x="764" y="30" text-anchor="middle" font-size="13.5" font-weight="650" fill="#1C2733">Toss PG</text>
+<text x="764" y="46" text-anchor="middle" font-size="10" fill="#5E6E7E" font-family="ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace">외부 HTTP API</text>
+<line x1="128" y1="117" x2="340" y2="117" stroke="#33414F" stroke-width="1.4" marker-end="url(#a-ink)"/>
+<rect x="138.2" y="81" width="191.5" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="234" y="93" text-anchor="middle" font-size="12.5" fill="#1C2733"><tspan x="234" dy="0">POST /api/payments/confirm</tspan></text>
+<line x1="340" y1="163" x2="552" y2="163" stroke="#33414F" stroke-width="1.4" marker-end="url(#a-ink)"/>
+<rect x="315.7" y="127" width="260.6" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="446" y="139" text-anchor="middle" font-size="12.5" fill="#1C2733"><tspan x="446" dy="0">findAlreadyApproved — 멱등 체크 (논락)</tspan></text>
+<line x1="552" y1="209" x2="340" y2="209" stroke="#33414F" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#v-ink)"/>
+<rect x="374.8" y="173" width="142.5" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="446" y="185" text-anchor="middle" font-size="12.5" fill="#1C2733"><tspan x="446" dy="0">null → 신규 승인 진행</tspan></text>
+<line x1="340" y1="255" x2="552" y2="255" stroke="#33414F" stroke-width="1.4" marker-end="url(#a-ink)"/>
+<rect x="321.2" y="219" width="249.6" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="446" y="231" text-anchor="middle" font-size="12.5" fill="#1C2733"><tspan x="446" dy="0">payment 스냅샷 조회 (논락 — ID만 확보)</tspan></text>
+<line x1="340" y1="317" x2="552" y2="317" stroke="#33414F" stroke-width="1.4" marker-end="url(#a-ink)"/>
+<rect x="302.1" y="265" width="287.8" height="38" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="446" y="277" text-anchor="middle" font-size="12.5" fill="#1C2733"><tspan x="446" dy="0">order FOR UPDATE → payment FOR UPDATE</tspan><tspan x="446" dy="16">(락 순서 고정)</tspan></text>
+<rect x="347.0" y="330" width="276.8" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="353" y="342" text-anchor="start" font-size="12.5" fill="#1C2733"><tspan x="353" dy="0">validateConfirmable — 결제·주문 상태 검증</tspan></text>
+<circle cx="340" cy="338" r="3.4" fill="#33414F"/>
+<rect x="347.0" y="372" width="346.5" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="353" y="384" text-anchor="start" font-size="12.5" fill="#1C2733"><tspan x="353" dy="0">ensureAvailable — 재고 사전 체크 (논락 · best-effort)</tspan></text>
+<circle cx="340" cy="380" r="3.4" fill="#33414F"/>
+<rect x="264.4" y="420" width="363.1" height="22" rx="4" fill="#EFF2F5" stroke="#D3DBE3" stroke-dasharray="4 3"/>
+<text x="446" y="432" text-anchor="middle" font-size="12" font-style="italic" fill="#5E6E7E"><tspan x="446" dy="0">커밋 → 락 해제. PG 응답을 기다리는 동안 어떤 락도 쥐지 않는다</tspan></text>
+<line x1="340" y1="489" x2="764" y2="489" stroke="#B26400" stroke-width="1.6" marker-end="url(#a-ext)"/>
+<rect x="385.2" y="453" width="333.6" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="552" y="465" text-anchor="middle" font-size="12.5" font-weight="600" fill="#B26400"><tspan x="552" dy="0">confirm(paymentKey, amount) — 트랜잭션 밖 HTTP</tspan></text>
+<line x1="764" y1="535" x2="340" y2="535" stroke="#B26400" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#v-ext)"/>
+<rect x="436.3" y="499" width="231.5" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="552" y="511" text-anchor="middle" font-size="12.5" font-weight="600" fill="#B26400"><tspan x="552" dy="0">승인 성공 · PaymentConfirmResult</tspan></text>
+<line x1="340" y1="581" x2="552" y2="581" stroke="#33414F" stroke-width="1.4" marker-end="url(#a-ink)"/>
+<rect x="282.0" y="545" width="328.0" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="446" y="557" text-anchor="middle" font-size="12.5" fill="#1C2733"><tspan x="446" dy="0">order → payment FOR UPDATE 재획득 (같은 락 순서)</tspan></text>
+<rect x="347.0" y="594" width="314.4" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="353" y="606" text-anchor="start" font-size="12.5" fill="#1C2733"><tspan x="353" dy="0">재검증 + validateConfirmResult — 금액·상태 대조</tspan></text>
+<circle cx="340" cy="602" r="3.4" fill="#33414F"/>
+<rect x="347.0" y="636" width="342.6" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="353" y="648" text-anchor="start" font-size="12.5" fill="#1C2733"><tspan x="353" dy="0">OrderStockService.decrease — 2-pass 권위 재고 차감</tspan></text>
+<circle cx="340" cy="644" r="3.4" fill="#33414F"/>
+<rect x="347.0" y="678" width="350.7" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="353" y="690" text-anchor="start" font-size="12.5" fill="#1C2733"><tspan x="353" dy="0">approvePayment — APPROVED 전이 · 이벤트/영수증 저장</tspan></text>
+<circle cx="340" cy="686" r="3.4" fill="#33414F"/>
+<line x1="340" y1="753" x2="128" y2="753" stroke="#33414F" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#v-ink)"/>
+<rect x="146.6" y="717" width="174.8" height="22" rx="4" fill="#FFFFFF" opacity="0.9"/>
+<text x="234" y="729" text-anchor="middle" font-size="12.5" fill="#1C2733"><tspan x="234" dy="0">200 OK · PaymentResponse</tspan></text>
+<rect x="20" y="218" width="157.7" height="17" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="26" y="230" font-size="11" font-weight="700" letter-spacing="0.06em" fill="#155EC2" font-family="ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace">Tx 1 · prepareConfirm</text>
+<rect x="20" y="544" width="203.5" height="17" rx="4" fill="#FFFFFF" opacity="0.92"/>
+<text x="26" y="556" font-size="11" font-weight="700" letter-spacing="0.06em" fill="#155EC2" font-family="ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace">Tx 2 · persistConfirmResult</text>
+</svg>
