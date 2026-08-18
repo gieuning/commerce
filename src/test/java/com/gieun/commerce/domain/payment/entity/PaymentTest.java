@@ -65,6 +65,7 @@ class PaymentTest {
     return Payment.request(
         10L,
         1L,
+        1L,
         "20260628000010ABCDEF123456",
         PgProvider.TOSS,
         PaymentMethod.CARD,

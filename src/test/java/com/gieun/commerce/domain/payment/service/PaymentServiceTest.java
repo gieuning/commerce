@@ -115,6 +115,7 @@ class PaymentServiceTest {
     Order order = Order.builder()
         .id(orderId)
         .userId(userId)
+        .userOrderNo(1L)
         .status(OrderStatus.CREATED)
         .totalProductPrice(new BigDecimal("30000.00"))
         .discountAmount(BigDecimal.ZERO)
@@ -159,6 +160,7 @@ class PaymentServiceTest {
     Order order = Order.builder()
         .id(orderId)
         .userId(userId)
+        .userOrderNo(1L)
         .status(OrderStatus.CREATED)
         .totalProductPrice(new BigDecimal("30000.00"))
         .discountAmount(BigDecimal.ZERO)
@@ -168,6 +170,7 @@ class PaymentServiceTest {
         .build();
     Payment failedPayment = Payment.request(
         orderId,
+        1L,
         userId,
         "20260628000010FAILED123456",
         PgProvider.TOSS,
@@ -204,6 +207,7 @@ class PaymentServiceTest {
     Order order = Order.builder()
         .id(orderId)
         .userId(userId)
+        .userOrderNo(1L)
         .status(OrderStatus.CREATED)
         .totalProductPrice(new BigDecimal("30000.00"))
         .discountAmount(BigDecimal.ZERO)
@@ -213,6 +217,7 @@ class PaymentServiceTest {
         .build();
     Payment requestedPayment = Payment.request(
         orderId,
+        1L,
         userId,
         "20260628000010REQUEST1234",
         PgProvider.TOSS,
@@ -241,6 +246,7 @@ class PaymentServiceTest {
     BigDecimal amount = new BigDecimal("30000.00");
     Payment payment = Payment.request(
         10L,
+        1L,
         userId,
         "20260628000010ABCDEF123456",
         PgProvider.TOSS,
@@ -457,6 +463,7 @@ class PaymentServiceTest {
         .build();
     Payment payment = Payment.request(
         orderId,
+        1L,
         userId,
         "20260628000010ABCDEF123456",
         PgProvider.TOSS,
@@ -519,6 +526,7 @@ class PaymentServiceTest {
         .build();
     Payment payment = Payment.request(
         orderId,
+        1L,
         userId,
         "20260628000010ABCDEF123456",
         PgProvider.TOSS,
@@ -563,7 +571,7 @@ class PaymentServiceTest {
     Long paymentId = 100L;
     BigDecimal amount = new BigDecimal("30000.00");
     Payment payment = Payment.request(
-        10L, userId, "20260628000010ABCDEF123456", PgProvider.TOSS, PaymentMethod.CARD, amount);
+        10L, 1L, userId, "20260628000010ABCDEF123456", PgProvider.TOSS, PaymentMethod.CARD, amount);
     ReflectionTestUtils.setField(payment, "id", paymentId);
     payment.approve("pay_test_key", LocalDateTime.now());
     payment.cancel(LocalDateTime.now()); // 이미 취소됨
@@ -598,7 +606,7 @@ class PaymentServiceTest {
         .orderedAt(LocalDateTime.now())
         .build();
     Payment payment = Payment.request(
-        orderId, userId, "20260628000010ABCDEF123456", PgProvider.TOSS, PaymentMethod.CARD, amount);
+        orderId, 1L, userId, "20260628000010ABCDEF123456", PgProvider.TOSS, PaymentMethod.CARD, amount);
     ReflectionTestUtils.setField(payment, "id", paymentId);
     payment.approve("pay_test_key", LocalDateTime.now());
     PaymentCancelRequest request = PaymentCancelRequest.builder()
@@ -688,7 +696,7 @@ class PaymentServiceTest {
     String paymentKey = "pay_test_key";
     BigDecimal amount = new BigDecimal("30000.00");
     Payment payment = Payment.request(
-        10L, userId, merchantOrderId, PgProvider.TOSS, PaymentMethod.CARD, amount);
+        10L, 1L, userId, merchantOrderId, PgProvider.TOSS, PaymentMethod.CARD, amount);
     ReflectionTestUtils.setField(payment, "id", 100L);
     payment.approve(paymentKey, LocalDateTime.now()); // 이미 승인됨
     PaymentConfirmRequest request = PaymentConfirmRequest.builder()
@@ -718,6 +726,7 @@ class PaymentServiceTest {
     Order order = Order.builder()
         .id(orderId)
         .userId(userId)
+        .userOrderNo(1L)
         .status(OrderStatus.CREATED)
         .totalProductPrice(amount)
         .discountAmount(BigDecimal.ZERO)
@@ -727,6 +736,7 @@ class PaymentServiceTest {
         .build();
     Payment payment = Payment.request(
         orderId,
+        1L,
         userId,
         merchantOrderId,
         PgProvider.TOSS,
